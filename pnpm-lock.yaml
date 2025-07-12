@@ -24,9 +24,6 @@ importers:
       '@google/clasp':
         specifier: 3.0.6-alpha
         version: 3.0.6-alpha(@types/node@20.19.7)(typescript@5.8.3)
-      '@telosh/filetree':
-        specifier: ^1.0.0
-        version: 1.0.0
       '@types/react':
         specifier: ^19.1.8
         version: 19.1.8
@@ -746,10 +743,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@telosh/filetree@1.0.0':
-    resolution: {integrity: sha512-dfRn8vIQ/7cSEo6Su8RWx6X/wf/sJlxNddKYlJip56/D+BRCCwXKFKrhI6EjVOnzdd150Y1Py3wItRujvYUvxQ==}
-    hasBin: true
-
   '@tybys/wasm-util@0.10.0':
     resolution: {integrity: sha512-VyyPYFlOMNylG45GoAe0xDoLwWuowvf92F9kySqzYh8vmYm7D2u4iUJKa1tOUpS70Ku13ASrOkS4ScXFsTaCNQ==}
 
@@ -914,10 +907,6 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
-
-  commander@11.1.0:
-    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
-    engines: {node: '>=16'}
 
   commander@13.1.0:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
@@ -2470,10 +2459,6 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.44.2':
     optional: true
 
-  '@telosh/filetree@1.0.0':
-    dependencies:
-      commander: 11.1.0
-
   '@tybys/wasm-util@0.10.0':
     dependencies:
       tslib: 2.8.1
@@ -2648,8 +2633,6 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
-
-  commander@11.1.0: {}
 
   commander@13.1.0: {}
 
