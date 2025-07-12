@@ -10,7 +10,7 @@
     "build": "pnpm run build:front && pnpm run build:back",
     "check": "biome check --write",
     "preview": "vite preview",
-    "push": "clasp push"
+    "push": "clasp push -f"
   },
   "dependencies": {
     "@types/google-apps-script": "^1.0.99",
