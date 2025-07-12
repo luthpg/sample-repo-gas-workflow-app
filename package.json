@@ -1,0 +1,33 @@
+{
+  "name": "gas-workflow-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:front": "tsc -b && vite build",
+    "build:back": "rolldown -c",
+    "build": "pnpm run build:front && pnpm run build:back",
+    "check": "biome check --write",
+    "preview": "vite preview",
+    "push": "clasp push",
+    "filetree": "pnpx @telosh/filetree --exclude public,src/assets --use-gitignore"
+  },
+  "dependencies": {
+    "@types/google-apps-script": "^1.0.99",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.1",
+    "@google/clasp": "3.0.6-alpha",
+    "@telosh/filetree": "^1.0.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "rolldown": "1.0.0-beta.26",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
