@@ -5,6 +5,11 @@ import './App.css';
 
 function App() {
   const [count, setCount] = useState(0);
+  google.script.run
+    .withSuccessHandler((result) => {
+      console.log(result);
+    })
+    .sayHello('my name');
 
   return (
     <>
