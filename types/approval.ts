@@ -1,23 +1,37 @@
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
-
-export interface ApprovalRequest {
+/**
+ * 稟議申請のデータ型
+ */
+export type ApprovalRequest = {
   id: string;
+  /** 稟議タイトル */
   title: string;
-  description: string;
-  amount: number;
-  benefits: string; // 購買対象のメリット
-  avoidableRisks: string; // 回避可能なリスク
+  /** 申請者メールアドレス */
   applicant: string;
-  status: ApprovalStatus;
-  createdAt: string; // ISO 8601形式の文字列
-  approvedAt?: string; // ISO 8601形式の文字列
-  approver?: string;
-  rejectionReason?: string;
-}
+  /** 承認者メールアドレス */
+  approver: string | null;
+  /** ステータス */
+  status: 'pending' | 'approved' | 'rejected';
+  /** 金額 */
+  amount: number;
+  /** 導入によるメリット */
+  benefits: string;
+  /** 懸念されるリスク */
+  avoidableRisks: string;
+  /** 申請日時 (ISO 8601形式) */
+  createdAt: string;
+  /** 承認日時 (ISO 8601形式) */
+  approvedAt: string | null;
+  /** 却下理由 */
+  rejectionReason: string | null;
+};
 
-// GASバックエンドからフロントエンドに返すデータ構造
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+/**
+ * 稟議申請フォームのデータ型（zodスキーマ用）
+ */
+export type ApprovalFormType = {
+  title: string;
+  amount: number;
+  benefits: string;
+  avoidableRisks: string;
+  approver: string;
+};

@@ -1,20 +1,15 @@
-import type React from 'react';
+import type { VariantProps } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -23,246 +18,152 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { serverScripts } from '@/lib/server'; // serverScripts をインポート
-import type {
-  ApiResponse,
-  ApprovalRequest,
-  ApprovalStatus,
-} from '../../types/approval';
+import { parameters } from '@/lib/parameters';
+import { serverScripts } from '@/lib/server';
+import type { ApprovalRequest } from '~/types/approval';
 
-interface ApprovalListProps {
-  initialRequests: ApprovalRequest[];
-  isApprover: boolean; // 承認者かどうかを受け取るプロパティを追加
-}
-
-const ApprovalList: React.FC<ApprovalListProps> = ({
-  initialRequests,
-  isApprover,
-}) => {
-  const [requests, setRequests] = useState<ApprovalRequest[]>(initialRequests);
+export function ApprovalList() {
+  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
-    null,
-  );
-  const [rejectionReason, setRejectionReason] = useState('');
 
-  useEffect(() => {
-    // ページロード時にGASから最新の稟議リストを取得
-    const fetchRequests = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        let response: string;
-        try {
-          response = await serverScripts.getApprovalRequests();
-        } catch (error) {
-          console.error('GASエラー:', error);
-          setError(
-            `稟議リストの取得に失敗しました: ${(error as Error).message}`,
-          );
-          return;
-        }
-        const result: ApiResponse<ApprovalRequest[]> = JSON.parse(response);
-
-        if (result.success && result.data) {
-          setRequests(result.data);
-        } else {
-          setError(result.error || '不明なエラーが発生しました');
-        }
-      } catch (err: any) {
-        console.error('フロントエンドエラー:', err);
-        setError('稟議リストの取得中に予期せぬエラーが発生しました');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRequests();
-  }, []); // 初回マウント時のみ実行
-
-  const handleUpdateStatus = async (
-    id: string,
-    status: ApprovalStatus,
-    reason?: string,
-  ) => {
-    setError(null);
+  // 稟議一覧とユーザー情報を取得
+  const fetchRequests = async () => {
+    setLoading(true);
     try {
-      let response: string;
-      try {
-        response = await serverScripts.updateApprovalStatus(id, status, reason);
-      } catch (error) {
-        console.error('GASエラー:', error);
-        setError(`ステータス更新に失敗しました: ${(error as Error).message}`);
-        return;
-      }
-      const result: ApiResponse<ApprovalRequest> = JSON.parse(response);
+      const allRequests = await serverScripts.getApprovalRequests();
+      setRequests(allRequests);
 
-      if (result.success && result.data) {
-        setRequests((prev) =>
-          prev.map((req) => (req.id === result.data?.id ? result.data : req)),
-        );
-        alert(
-          `稟議 ${id} が${status === 'approved' ? '承認' : '却下'}されました。`,
-        );
-      } else {
-        setError(result.error || '不明なエラーが発生しました');
-      }
-    } catch (err: any) {
-      console.error('フロントエンドエラー:', err);
-      setError('ステータス更新中に予期せぬエラーが発生しました');
+      setCurrentUserEmail(parameters.userAddress);
+    } catch (error) {
+      toast.error('データ取得エラー', {
+        description: `稟議データの取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+      });
+      console.error('GASエラー:', error);
     } finally {
-      setIsRejectDialogOpen(false);
-      setSelectedRequestId(null);
-      setRejectionReason('');
+      setLoading(false);
     }
   };
 
-  const openRejectDialog = (id: string) => {
-    setSelectedRequestId(id);
-    setIsRejectDialogOpen(true);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only fetch on mount
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  // ステータス更新処理
+  const handleUpdateStatus = async (
+    id: string,
+    status: 'approved' | 'rejected',
+  ) => {
+    try {
+      await serverScripts.updateApprovalStatus(id, status);
+      toast.success('更新成功', {
+        description: `稟議のステータスが${status === 'approved' ? '承認' : '却下'}されました。`,
+      });
+      fetchRequests(); // データを再取得して画面を更新
+    } catch (error) {
+      toast.success('更新失敗', {
+        description: `ステータス更新に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+      });
+      console.error('GASエラー:', error);
+    }
   };
 
-  const confirmReject = () => {
-    if (selectedRequestId) {
-      handleUpdateStatus(selectedRequestId, 'rejected', rejectionReason);
+  const getStatusBadgeVariant = (
+    status: ApprovalRequest['status'],
+  ): VariantProps<typeof badgeVariants>['variant'] => {
+    switch (status) {
+      case 'approved':
+        return 'default';
+      case 'rejected':
+        return 'destructive';
+      // include case 'pending':
+      default:
+        return 'secondary';
     }
   };
 
   if (loading) {
-    return <div className="text-center py-4">稟議リストを読み込み中...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-4 text-red-500">エラー: {error}</div>;
+    return <p>ロード中...</p>;
   }
 
   return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>件名</TableHead>
-            <TableHead>申請者</TableHead>
-            <TableHead>金額</TableHead>
-            <TableHead className="w-[150px]">メリット</TableHead>{' '}
-            {/* 列幅を調整 */}
-            <TableHead className="w-[150px]">回避可能なリスク</TableHead>{' '}
-            {/* 列幅を調整 */}
-            <TableHead>ステータス</TableHead>
-            <TableHead>申請日時</TableHead>
-            {isApprover && <TableHead>アクション</TableHead>}{' '}
-            {/* 承認者の場合のみ表示 */}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {requests.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={isApprover ? 9 : 8} className="text-center">
-                表示する稟議がありません。
-              </TableCell>
-            </TableRow>
-          ) : (
-            requests.map((request) => (
-              <TableRow key={request.id}>
-                <TableCell>{request.id}</TableCell>
-                <TableCell>{request.title}</TableCell>
-                <TableCell>{request.applicant}</TableCell>
-                <TableCell>{request.amount.toLocaleString()}円</TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {request.benefits}
-                </TableCell>{' '}
-                {/* 長い場合は省略 */}
-                <TableCell className="max-w-[200px] truncate">
-                  {request.avoidableRisks}
-                </TableCell>{' '}
-                {/* 長い場合は省略 */}
-                <TableCell>
-                  <Badge
-                    variant={
-                      request.status === 'approved'
-                        ? 'default'
-                        : request.status === 'rejected'
-                          ? 'destructive'
-                          : 'secondary'
-                    }
-                  >
-                    {request.status === 'pending' && '承認待ち'}
-                    {request.status === 'approved' && '承認済み'}
-                    {request.status === 'rejected' && '却下済み'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(request.createdAt).toLocaleString()}
-                </TableCell>
-                {isApprover &&
-                  request.status === 'pending' && ( // 承認者の場合のみアクションを表示
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>稟議一覧</CardTitle>
+        <CardDescription>
+          自分が承認者として指定された稟議を、承認または却下できます。
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {requests.length === 0 ? (
+          <p>表示する稟議申請はありません。</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>タイトル</TableHead>
+                  <TableHead>申請者</TableHead>
+                  <TableHead>承認者</TableHead>
+                  <TableHead>金額</TableHead>
+                  <TableHead>ステータス</TableHead>
+                  <TableHead>申請日時</TableHead>
+                  <TableHead className="text-right">アクション</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell className="font-medium">{request.id}</TableCell>
+                    <TableCell>{request.title}</TableCell>
+                    <TableCell>{request.applicant}</TableCell>
+                    <TableCell>{request.approver}</TableCell>
+                    <TableCell>¥{request.amount.toLocaleString()}</TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            アクション
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleUpdateStatus(request.id, 'approved')
-                            }
-                          >
-                            承認
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => openRejectDialog(request.id)}
-                          >
-                            却下
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Badge variant={getStatusBadgeVariant(request.status)}>
+                        {request.status === 'pending' && '未承認'}
+                        {request.status === 'approved' && '承認済み'}
+                        {request.status === 'rejected' && '却下済み'}
+                      </Badge>
                     </TableCell>
-                  )}
-                {isApprover && request.status !== 'pending' && (
-                  <TableCell>
-                    - {/* 承認済み/却下済みの場合はアクションなし */}
-                  </TableCell>
-                )}
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {/* 却下理由入力ダイアログ */}
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>稟議却下</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea
-              placeholder="却下理由を入力してください"
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-            />
+                    <TableCell>
+                      {new Date(request.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right flex justify-end gap-2">
+                      {/* 承認ボタンの表示条件: ステータスがpendingかつ、承認者として自分が指定されている場合 */}
+                      {request.status === 'pending' &&
+                        request.approver === currentUserEmail && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateStatus(request.id, 'approved')
+                              }
+                            >
+                              承認
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateStatus(request.id, 'rejected')
+                              }
+                            >
+                              却下
+                            </Button>
+                          </>
+                        )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRejectDialogOpen(false)}
-            >
-              キャンセル
-            </Button>
-            <Button onClick={confirmReject} disabled={!rejectionReason.trim()}>
-              却下を確定
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
-};
-
-export default ApprovalList;
+}

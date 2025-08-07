@@ -1,8 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type * as React from 'react';
+import { PlusCircle } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { toast } from 'sonner';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -14,185 +24,153 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { serverScripts } from '@/lib/server';
-import type { ApiResponse, ApprovalRequest } from '../../types/approval';
 
-// フォームのスキーマ定義
+// フォームのバリデーションスキーマ
 const formSchema = z.object({
-  title: z
-    .string()
-    .min(1, { message: '件名は必須です' })
-    .max(100, { message: '件名は100文字以内です' }),
-  description: z
-    .string()
-    .min(1, { message: '説明は必須です' })
-    .max(500, { message: '説明は500文字以内です' }),
-  amount: z.number().min(0, { message: '金額は0以上である必要があります' }),
-  benefits: z
-    .string()
-    .min(1, { message: 'メリットは必須です' })
-    .max(500, { message: 'メリットは500文字以内です' }),
-  avoidableRisks: z
-    .string()
-    .min(1, { message: '回避可能なリスクは必須です' })
-    .max(500, { message: '回避可能なリスクは500文字以内です' }),
-  applicant: z.string().min(1, { message: '申請者は必須です' }),
+  title: z.string().min(2, {
+    message: 'タイトルは2文字以上で入力してください。',
+  }),
+  amount: z.number().positive({
+    message: '金額は正の数で入力してください。',
+  }),
+  benefits: z.string().min(10, {
+    message: 'メリットは10文字以上で入力してください。',
+  }),
+  avoidableRisks: z.string().min(10, {
+    message: 'リスクは10文字以上で入力してください。',
+  }),
+  approver: z.email({
+    message: '有効なメールアドレスを入力してください。',
+  }),
 });
 
-type ApprovalFormValues = z.infer<typeof formSchema>;
+export function ApprovalForm() {
+  const [open, setOpen] = useState(false);
 
-interface ApprovalFormProps {
-  onSubmitSuccess: (newRequest: ApprovalRequest) => void;
-}
+  type FormSchemaType = z.infer<typeof formSchema>;
 
-const ApprovalForm: React.FC<ApprovalFormProps> = ({ onSubmitSuccess }) => {
-  const form = useForm<ApprovalFormValues>({
+  const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      description: '',
       amount: 0,
       benefits: '',
       avoidableRisks: '',
-      applicant: '',
+      approver: '',
     },
   });
 
-  const onSubmit = async (values: ApprovalFormValues) => {
+  // フォーム送信時の処理
+  async function onSubmit(values: FormSchemaType) {
     try {
-      // GASバックエンドに申請データを送信する関数を呼び出す
-      // google.script.run のラッパー `serverScripts` の型は gasnuki で自動生成されるため、型安全に呼び出せる
-      let response: string;
-      try {
-        response = await serverScripts.createApprovalRequest(values);
-      } catch (error) {
-        form.setError('root', {
-          message: `申請に失敗しました: ${(error as Error).message}`,
-        });
-        return;
-      }
-      const result: ApiResponse<ApprovalRequest> = JSON.parse(response);
-
-      if (result.success && result.data) {
-        onSubmitSuccess(result.data);
-        form.reset();
-      } else {
-        form.setError('root', {
-          message: result.error || '不明なエラーが発生しました',
-        });
-      }
-    } catch (error) {
-      console.error('フォーム送信エラー:', error);
-      form.setError('root', { message: '予期せぬエラーが発生しました' });
+      await serverScripts.createApprovalRequest(values);
+      toast.success('申請成功', {
+        description: '稟議申請が正常に送信されました。',
+      });
+      form.reset();
+      setOpen(false);
+    } catch (error: unknown) {
+      toast.error('申請失敗', {
+        description: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+      });
     }
-  };
+  }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>件名</FormLabel>
-              <FormControl>
-                <Input placeholder="稟議の件名" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>説明</FormLabel>
-              <FormControl>
-                <Textarea placeholder="詳細な説明" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>金額</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="金額"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="benefits"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>購買対象のメリット</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="この購買によるメリットを具体的に記述してください"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="avoidableRisks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>回避可能なリスク</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="この購買により回避できるリスクや、導入しないことによるリスクを記述してください"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="applicant"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>申請者</FormLabel>
-              <FormControl>
-                <Input placeholder="あなたの名前" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {form.formState.errors.root && (
-          <p className="text-red-500 text-sm">
-            {form.formState.errors.root.message}
-          </p>
-        )}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={form.formState.isSubmitting}
-        >
-          {form.formState.isSubmitting ? '申請中...' : '申請する'}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="text-sm">
+          <PlusCircle className="mr-2 h-4 w-4" /> 新規申請
         </Button>
-      </form>
-    </Form>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>新規稟議申請</DialogTitle>
+          <DialogDescription>
+            新しい稟議申請フォームに必要事項を入力してください。
+          </DialogDescription>
+        </DialogHeader>
+        <Form<FormSchemaType> {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField<FormSchemaType>
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>タイトル</FormLabel>
+                  <FormControl>
+                    <Input placeholder="稟議タイトル" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField<FormSchemaType>
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>金額</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField<FormSchemaType>
+              control={form.control}
+              name="approver"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>承認者メールアドレス</FormLabel>
+                  <FormControl>
+                    <Input placeholder="approver@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField<FormSchemaType>
+              control={form.control}
+              name="benefits"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>導入によるメリット</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="メリットを具体的に記述してください"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField<FormSchemaType>
+              control={form.control}
+              name="avoidableRisks"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>懸念されるリスク</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="考えられるリスクと回避策"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">申請する</Button>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
-};
-
-export default ApprovalForm;
+}

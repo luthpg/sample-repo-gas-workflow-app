@@ -1,105 +1,58 @@
-import { FileTextIcon, LayoutDashboardIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { ApprovalRequest } from '@/../types/approval';
+import { toast } from 'sonner';
+import { ApprovalForm } from '@/components/approval-form';
+import { ApprovalList } from '@/components/approval-list';
+import { ModeToggle } from '@/components/mode-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
-import {
-  embeddedParameters,
-  handleOnChangePage,
-} from '@/lib/server';
-import { Button } from '@/components/ui/button';
-import type { Page } from '@/../types/index';
-import Dashboard from '@/page/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Toaster } from '@/components/ui/sonner';
+import { parameters } from '@/lib/parameters';
 
-function App() {
-  const [submittedRequests, setSubmittedRequests] = useState<ApprovalRequest[]>(
-    [],
-  );
+export default function App() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-  const [page, setPage] = useState<Page>('dashboard');
-
-  interface PageConfig {
-    label: string;
-    icon: React.ReactNode;
-    component: React.ReactNode;
-  }
-
-  const pages: Record<Page, PageConfig> = {
-    dashboard: {
-      label: 'ダッシュボード',
-      icon: <LayoutDashboardIcon />,
-      component: <Dashboard />,
-    },
-    'approval-detail': {
-      label: 'ダッシュボード',
-      icon: <LayoutDashboardIcon />,
-      component: <Dashboard />,
-    },
-  };
 
   useEffect(() => {
-    setCurrentUserEmail(embeddedParameters.userAddress);
-    setPage(embeddedParameters.parameter.page as Page);
+    // ユーザー情報を取得
+    const fetchUserEmail = async () => {
+      try {
+        setCurrentUserEmail(parameters.userAddress);
+      } catch (error) {
+        toast.error('ユーザー情報取得エラー', {
+          description: `ユーザーメールアドレスの取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        console.error('GASエラー:', error);
+      }
+    };
+    fetchUserEmail();
   }, []);
 
-  useEffect(() => {
-    handleOnChangePage(page);
-  }, [page]);
-
-  const handleApprovalFormSubmit = (newRequest: ApprovalRequest) => {
-    setSubmittedRequests((prev) => [...prev, newRequest]);
-    alert('稟議申請が送信されました！'); // 簡易的な通知
-  };
-
   return (
-    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <div className="flex h-screen w-full bg-background font-sans">
-        {/* サイドバー */}
-        <aside className="w-64 flex-shrink-0 border-r border-sidebar-border bg-sidebar p-6">
-          <div className="flex items-center gap-2 mb-8">
-            <FileTextIcon className="h-6 w-6 text-sidebar-foreground" />
-            <h1 className="text-lg font-semibold text-sidebar-foreground">
-              稟議管理システム
-            </h1>
-          </div>
-          <nav className="flex flex-col space-y-2">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-2">
-              ナビゲーション
-            </h2>
-            <a
-              href="#"
-              className="rounded-lg bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-accent-foreground"
-            >
-              新規申請
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              現在の申請
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              承認待ち
-            </a>
-          </nav>
-        </aside>
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <main className="container mx-auto py-8 space-y-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">稟議ワークフローアプリ</h1>
+          <ModeToggle />
+        </div>
 
-        {/* メインコンテンツ */}
-        <main className="flex-1 flex flex-col">
-          {/* ヘッダー */}
-          <header className="flex items-center justify-end gap-4 border-b border-border p-4">
-            <Button variant="outline">ダッシュボード</Button>
-            <Button>申請</Button>
-            <Button>承認</Button>
-          </header>
+        {currentUserEmail && (
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>ユーザー情報</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>現在ログイン中のユーザー:</p>
+              <p className="font-bold text-lg">{currentUserEmail}</p>
+            </CardContent>
+          </Card>
+        )}
 
-          {pages[page].component}
-        </main>
-      </div>
+        <div className="flex justify-center">
+          <ApprovalForm />
+        </div>
+
+        <ApprovalList />
+      </main>
+      <Toaster />
     </ThemeProvider>
   );
 }
-
-export default App;
