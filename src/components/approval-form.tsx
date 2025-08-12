@@ -68,9 +68,9 @@ export function ApprovalForm() {
       });
       form.reset();
       setOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       toast.error('申請失敗', {
-        description: `エラーが発生しました: ${error.message}`,
+        description: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
       });
     }
   }
@@ -82,7 +82,7 @@ export function ApprovalForm() {
           <PlusCircle className="mr-2 h-4 w-4" /> 新規申請
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)]">
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>新規稟議申請</DialogTitle>
           <DialogDescription>

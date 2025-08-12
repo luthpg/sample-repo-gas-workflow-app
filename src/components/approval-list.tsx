@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -29,99 +30,192 @@ import { Textarea } from '@/components/ui/textarea';
 import { parameters } from '@/lib/parameters';
 import { serverScripts } from '@/lib/server';
 
+const getStatusBadgeVariant = (
+  status: ApprovalRequest['status'],
+): 'success' | 'destructive' | 'warning' | 'info' => {
+  switch (status) {
+    case 'approved':
+      return 'success';
+    case 'rejected':
+      return 'destructive';
+    case 'withdrawn':
+      return 'warning';
+    case 'pending':
+    default:
+      return 'info';
+  }
+};
+
 // 詳細表示用のモーダルコンポーネント
 const DetailDialog = ({
   request,
   open,
   onOpenChange,
+  currentUserEmail,
+  onUpdateStatus,
+  onWithdrawRequest,
 }: {
   request: ApprovalRequest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currentUserEmail: string | null;
+  onUpdateStatus: (
+    id: string,
+    status: 'approved' | 'rejected',
+    reason?: string,
+    comment?: string,
+  ) => void;
+  onWithdrawRequest: (id: string) => void;
 }) => {
+  const [openApproveDialog, setOpenApproveDialog] = useState(false);
+  const [approveComment, setApproveComment] = useState('');
+
   if (!request) return null;
+
+  const handleApproveWithComment = () => {
+    onUpdateStatus(request.id, 'approved', undefined, approveComment);
+    setOpenApproveDialog(false);
+    onOpenChange(false); // 詳細ダイアログも閉じる
+    setApproveComment('');
+  };
+
+  const handleReject = () => {
+    onUpdateStatus(request.id, 'rejected');
+    onOpenChange(false); // 詳細ダイアログを閉じる
+  };
+
+  const handleWithdraw = () => {
+    onWithdrawRequest(request.id);
+    onOpenChange(false); // 詳細ダイアログを閉じる
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>稟議詳細: {request.title}</DialogTitle>
-          <DialogDescription>ID: {request.id}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>稟議詳細: {request.title}</DialogTitle>
+            <DialogDescription>ID: {request.id}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 overflow-y-auto max-h-[70vh]">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  申請者
+                </p>
+                <p className="font-semibold">{request.applicant}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  承認者
+                </p>
+                <p className="font-semibold">{request.approver || '未指定'}</p>
+              </div>
+            </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                申請者
+              <p className="text-sm font-medium text-muted-foreground">金額</p>
+              <p className="font-semibold">
+                ¥{request.amount.toLocaleString()}
               </p>
-              <p className="font-semibold">{request.applicant}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                承認者
+                導入によるメリット
               </p>
-              <p className="font-semibold">{request.approver || '未指定'}</p>
+              <p>{request.benefits}</p>
             </div>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">金額</p>
-            <p className="font-semibold">¥{request.amount.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              導入によるメリット
-            </p>
-            <p>{request.benefits}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              懸念されるリスク
-            </p>
-            <p>{request.avoidableRisks}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              ステータス
-            </p>
-            <Badge variant={getStatusBadgeVariant(request.status)}>
-              {request.status === 'pending' && '未承認'}
-              {request.status === 'approved' && '承認済み'}
-              {request.status === 'rejected' && '却下済み'}
-              {request.status === 'withdrawn' && '取り下げ済み'}
-            </Badge>
-          </div>
-          {request.approverComment && (
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                承認者コメント
+                懸念されるリスク
               </p>
-              <p>{request.approverComment}</p>
+              <p>{request.avoidableRisks}</p>
             </div>
-          )}
-          {request.rejectionReason && (
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                却下理由
+                ステータス
               </p>
-              <p>{request.rejectionReason}</p>
+              <Badge variant={getStatusBadgeVariant(request.status)}>
+                {request.status === 'pending' && '未承認'}
+                {request.status === 'approved' && '承認済み'}
+                {request.status === 'rejected' && '却下済み'}
+                {request.status === 'withdrawn' && '取り下げ済み'}
+              </Badge>
             </div>
-          )}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              申請日時
-            </p>
-            <p>{new Date(request.createdAt).toLocaleString()}</p>
+            {request.approverComment && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  承認者コメント
+                </p>
+                <p>{request.approverComment}</p>
+              </div>
+            )}
+            {request.rejectionReason && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  却下理由
+                </p>
+                <p>{request.rejectionReason}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                申請日時
+              </p>
+              <p>{new Date(request.createdAt).toLocaleString()}</p>
+            </div>
+            {request.approvedAt && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  承認日時
+                </p>
+                <p>{new Date(request.approvedAt).toLocaleString()}</p>
+              </div>
+            )}
           </div>
-          {request.approvedAt && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                承認日時
-              </p>
-              <p>{new Date(request.approvedAt).toLocaleString()}</p>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="sm:justify-end">
+            {request.status === 'pending' &&
+              request.applicant === currentUserEmail && (
+                <Button variant="outline" onClick={handleWithdraw}>
+                  取り下げ
+                </Button>
+              )}
+            {request.status === 'pending' &&
+              request.approver === currentUserEmail && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setOpenApproveDialog(true)}
+                  >
+                    承認
+                  </Button>
+                  <Button variant="destructive" onClick={handleReject}>
+                    却下
+                  </Button>
+                </>
+              )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openApproveDialog} onOpenChange={setOpenApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>稟議を承認</DialogTitle>
+            <DialogDescription>
+              承認コメントを入力してください（任意）。
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="承認コメント"
+            value={approveComment}
+            onChange={(e) => setApproveComment(e.target.value)}
+          />
+          <DialogFooter>
+            <Button onClick={handleApproveWithComment}>承認する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
@@ -130,17 +224,10 @@ export function ApprovalList() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [openApproveDialog, setOpenApproveDialog] = useState(false);
-  const [approveComment, setApproveComment] = useState('');
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
-    null,
-  );
-
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<ApprovalRequest | null>(null);
 
-  // 稟議一覧とユーザー情報を取得
   const fetchRequests = async () => {
     setLoading(true);
     try {
@@ -163,7 +250,6 @@ export function ApprovalList() {
     fetchRequests();
   }, []);
 
-  // 承認ステータス更新処理
   const handleUpdateStatus = async (
     id: string,
     status: 'approved' | 'rejected',
@@ -184,7 +270,6 @@ export function ApprovalList() {
     }
   };
 
-  // 取り下げ処理
   const handleWithdrawRequest = async (id: string) => {
     try {
       await serverScripts.withdrawApprovalRequest(id);
@@ -197,39 +282,6 @@ export function ApprovalList() {
         description: `取り下げに失敗しました: ${error instanceof Error ? error.message : String(error)}`,
       });
       console.error('GASエラー:', error);
-    }
-  };
-
-  const getStatusBadgeVariant = (status: ApprovalRequest['status']) => {
-    switch (status) {
-      case 'approved':
-        return 'success';
-      case 'rejected':
-        return 'destructive';
-      case 'withdrawn':
-        return 'warning';
-      // case 'pending':
-      default:
-        return 'info';
-    }
-  };
-
-  const handleOpenApproveDialog = (id: string) => {
-    setSelectedRequestId(id);
-    setOpenApproveDialog(true);
-  };
-
-  const handleApproveWithComment = () => {
-    if (selectedRequestId) {
-      handleUpdateStatus(
-        selectedRequestId,
-        'approved',
-        undefined,
-        approveComment,
-      );
-      setOpenApproveDialog(false);
-      setApproveComment('');
-      setSelectedRequestId(null);
     }
   };
 
@@ -283,7 +335,7 @@ export function ApprovalList() {
                         {request.status === 'withdrawn' && '取り下げ済み'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
+                    <TableCell className="text-right">
                       <Button
                         variant="outline"
                         size="sm"
@@ -291,39 +343,6 @@ export function ApprovalList() {
                       >
                         詳細
                       </Button>
-                      {request.status === 'pending' &&
-                        request.applicant === currentUserEmail && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleWithdrawRequest(request.id)}
-                          >
-                            取り下げ
-                          </Button>
-                        )}
-                      {request.status === 'pending' &&
-                        request.approver === currentUserEmail && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleOpenApproveDialog(request.id)
-                              }
-                            >
-                              承認
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateStatus(request.id, 'rejected')
-                              }
-                            >
-                              却下
-                            </Button>
-                          </>
-                        )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -332,45 +351,14 @@ export function ApprovalList() {
           </div>
         )}
       </CardContent>
-      {/* 承認コメント入力ダイアログ */}
-      <Dialog open={openApproveDialog} onOpenChange={setOpenApproveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>稟議を承認</DialogTitle>
-            <DialogDescription>
-              承認コメントを入力してください（任意）。
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="承認コメント"
-            value={approveComment}
-            onChange={(e) => setApproveComment(e.target.value)}
-          />
-          <Button onClick={handleApproveWithComment}>承認する</Button>
-        </DialogContent>
-      </Dialog>
       <DetailDialog
         request={selectedRequest}
         open={openDetailDialog}
         onOpenChange={setOpenDetailDialog}
+        currentUserEmail={currentUserEmail}
+        onUpdateStatus={handleUpdateStatus}
+        onWithdrawRequest={handleWithdrawRequest}
       />
     </Card>
   );
-}
-
-// Badgeのvariantを定義
-function getStatusBadgeVariant(
-  status: ApprovalRequest['status'],
-): 'success' | 'destructive' | 'warning' | 'info' {
-  switch (status) {
-    case 'approved':
-      return 'success';
-    case 'rejected':
-      return 'destructive';
-    case 'withdrawn':
-      return 'warning';
-    // case 'pending':
-    default:
-      return 'info';
-  }
 }
