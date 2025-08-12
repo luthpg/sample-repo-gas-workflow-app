@@ -2,17 +2,16 @@ import {
   getPromisedServerScripts,
   type PartialScriptType,
 } from '@ciderjs/gasnuki/promise';
-import type { ApprovalRequest } from '~/types/approval';
-import type { ServerScripts } from '~/types/appsscript/client';
+import type { ApprovalRequest } from '@/../types/approval';
+import type { ServerScripts } from '@/../types/appsscript/client';
 
 // ローカル開発時にGASバックエンドの処理をモックするための仮実装です。
-// GASにデプロイすることなく、フロントエンドの挙動を確認できます。
 const mockApprovalRequests: ApprovalRequest[] = [
   {
     id: 'MOCK-001',
     title: 'モック用稟議A',
-    applicant: 'applicant@example.com',
-    approver: 'approver@example.com', // 承認者を指定
+    applicant: 'mock-applicant@example.com',
+    approver: 'mock-approver@example.com',
     status: 'pending',
     amount: 50000,
     benefits: 'テスト効率化',
@@ -20,12 +19,13 @@ const mockApprovalRequests: ApprovalRequest[] = [
     createdAt: new Date().toISOString(),
     approvedAt: null,
     rejectionReason: null,
+    approverComment: null, // 新しいフィールド
   },
   {
     id: 'MOCK-002',
     title: 'モック用稟議B',
-    applicant: 'approver@example.com',
-    approver: 'approver@example.com',
+    applicant: 'mock-approver@example.com',
+    approver: 'mock-approver@example.com',
     status: 'approved',
     amount: 150000,
     benefits: '生産性向上',
@@ -33,11 +33,12 @@ const mockApprovalRequests: ApprovalRequest[] = [
     createdAt: new Date().toISOString(),
     approvedAt: new Date().toISOString(),
     rejectionReason: null,
+    approverComment: '承認します。', // 新しいフィールド
   },
 ];
 
 const mockup: PartialScriptType<ServerScripts> = {
-  createApprovalRequest: async (formData): Promise<string> => {
+  createApprovalRequest: async (formData) => {
     console.log('Mock: createApprovalRequest called with', formData);
     const newRequest: ApprovalRequest = {
       id: `MOCK-${mockApprovalRequests.length + 1}`,
@@ -47,19 +48,16 @@ const mockup: PartialScriptType<ServerScripts> = {
       createdAt: new Date().toISOString(),
       approvedAt: null,
       rejectionReason: null,
+      approverComment: null,
     };
     mockApprovalRequests.push(newRequest);
     return 'Mock: 稟議申請が正常に作成されました。';
   },
-  getApprovalRequests: async (): Promise<ApprovalRequest[]> => {
+  getApprovalRequests: async () => {
     console.log('Mock: getApprovalRequests called');
-    return mockApprovalRequests;
+    return JSON.stringify(mockApprovalRequests);
   },
-  updateApprovalStatus: async (
-    id: string,
-    newStatus: 'approved' | 'rejected',
-    reason?: string,
-  ): Promise<string> => {
+  updateApprovalStatus: async (id, newStatus, reason, approverComment) => {
     console.log(`Mock: updateApprovalStatus called for ${id} to ${newStatus}`);
     const request = mockApprovalRequests.find((req) => req.id === id);
     if (request && request.approver === 'mock-approver@example.com') {
@@ -67,7 +65,18 @@ const mockup: PartialScriptType<ServerScripts> = {
       request.status = newStatus;
       request.approvedAt = new Date().toISOString();
       request.rejectionReason = reason || null;
+      request.approverComment = approverComment || null; // コメントを保存
       return `Mock: 稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
+    }
+    throw new Error('Mock: 稟議申請が見つからないか、権限がありません。');
+  },
+  withdrawApprovalRequest: async (id) => {
+    console.log(`Mock: withdrawApprovalRequest called for ${id}`);
+    const request = mockApprovalRequests.find((req) => req.id === id);
+    if (request && request.applicant === 'mock-applicant@example.com') {
+      // 申請者チェック
+      request.status = 'withdrawn';
+      return `Mock: 稟議申請ID: ${id} が正常に取り下げられました。`;
     }
     throw new Error('Mock: 稟議申請が見つからないか、権限がありません。');
   },

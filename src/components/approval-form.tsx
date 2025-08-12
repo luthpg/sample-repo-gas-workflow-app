@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+import type { ApprovalForm as ApprovalFormType } from '@/../types/approval';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -30,7 +31,7 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: 'タイトルは2文字以上で入力してください。',
   }),
-  amount: z.number().positive({
+  amount: z.coerce.number().positive({
     message: '金額は正の数で入力してください。',
   }),
   benefits: z.string().min(10, {
@@ -39,7 +40,7 @@ const formSchema = z.object({
   avoidableRisks: z.string().min(10, {
     message: 'リスクは10文字以上で入力してください。',
   }),
-  approver: z.email({
+  approver: z.string().email({
     message: '有効なメールアドレスを入力してください。',
   }),
 });
@@ -47,9 +48,7 @@ const formSchema = z.object({
 export function ApprovalForm() {
   const [open, setOpen] = useState(false);
 
-  type FormSchemaType = z.infer<typeof formSchema>;
-
-  const form = useForm<FormSchemaType>({
+  const form = useForm<ApprovalFormType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
@@ -61,7 +60,7 @@ export function ApprovalForm() {
   });
 
   // フォーム送信時の処理
-  async function onSubmit(values: FormSchemaType) {
+  async function onSubmit(values: ApprovalFormType) {
     try {
       await serverScripts.createApprovalRequest(values);
       toast.success('申請成功', {
@@ -69,9 +68,9 @@ export function ApprovalForm() {
       });
       form.reset();
       setOpen(false);
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast.error('申請失敗', {
-        description: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+        description: `エラーが発生しました: ${error.message}`,
       });
     }
   }
@@ -83,16 +82,16 @@ export function ApprovalForm() {
           <PlusCircle className="mr-2 h-4 w-4" /> 新規申請
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)]">
         <DialogHeader>
           <DialogTitle>新規稟議申請</DialogTitle>
           <DialogDescription>
             新しい稟議申請フォームに必要事項を入力してください。
           </DialogDescription>
         </DialogHeader>
-        <Form<FormSchemaType> {...form}>
+        <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField<FormSchemaType>
+            <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
@@ -105,24 +104,20 @@ export function ApprovalForm() {
                 </FormItem>
               )}
             />
-            <FormField<FormSchemaType>
+            <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>金額</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField<FormSchemaType>
+            <FormField
               control={form.control}
               name="approver"
               render={({ field }) => (
@@ -135,7 +130,7 @@ export function ApprovalForm() {
                 </FormItem>
               )}
             />
-            <FormField<FormSchemaType>
+            <FormField
               control={form.control}
               name="benefits"
               render={({ field }) => (
@@ -151,7 +146,7 @@ export function ApprovalForm() {
                 </FormItem>
               )}
             />
-            <FormField<FormSchemaType>
+            <FormField
               control={form.control}
               name="avoidableRisks"
               render={({ field }) => (

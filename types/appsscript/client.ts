@@ -21,21 +21,29 @@ export type ServerScripts = {
    * スプレッドシートからすべての稟議申請を取得する
    * @returns 稟議申請の配列
    */
-  getApprovalRequests(): ApprovalRequest[];
+  getApprovalRequests(): string;
 
   /**
    * 稟議申請のステータスを更新する
-   * 承認者として指定されたユーザーのみが実行可能
    * @param id 稟議申請ID
    * @param newStatus 新しいステータス ('approved' or 'rejected')
    * @param reason 却下理由 (却下時のみ)
+   * @param approverComment 承認コメント (承認時のみ)
    * @returns 成功メッセージ
    */
   updateApprovalStatus(
     id: string,
     newStatus: 'approved' | 'rejected',
     reason?: string,
+    approverComment?: string,
   ): string;
+
+  /**
+   * 稟議申請を申請者自身が取り下げる
+   * @param id 稟議申請ID
+   * @returns 成功メッセージ
+   */
+  withdrawApprovalRequest(id: string): string;
 
   /**
    * スクリプトロックを取得し、コールバックを排他制御下で実行するユーティリティ関数。
@@ -44,6 +52,14 @@ export type ServerScripts = {
    * @returns なし
    */
   useLock(callback: () => void): void;
+
+  /**
+   * 稟議申請のステータス変更を通知するメールを送信する
+   * @param to 宛先メールアドレス
+   * @param subject 件名
+   * @param body 本文
+   */
+  sendApprovalNotification(to: string, subject: string, body: string): void;
 };
 
 // Auto-generated Types for GoogleAppsScript in client-side code

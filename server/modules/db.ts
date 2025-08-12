@@ -1,5 +1,6 @@
 import type { ApprovalRequest } from '~/types/approval';
 import { useLock } from './lock';
+import { generateEmailBody_, sendApprovalNotification } from './mailer';
 
 /**
  * 新しい稟議申請を作成し、スプレッドシートに追記する
@@ -31,8 +32,22 @@ export function createApprovalRequest(formData: {
       Utilities.formatDate(now, 'JST', 'yyyy/MM/dd HH:mm:ss'),
       '', // 承認日時
       '', // 却下理由
+      '', // 承認者コメント
     ]);
   });
+
+  // 申請者と承認者にメール通知
+  const requestDetails = {
+    id: `APR-${Utilities.getUuid()}`,
+    title: formData.title,
+    applicant: userEmail,
+    approver: formData.approver,
+    status: 'pending',
+  };
+  const subject = `【稟議申請】新しい稟議が届きました: ${formData.title}`;
+  const body = generateEmailBody_(requestDetails);
+  sendApprovalNotification(userEmail, subject, body);
+  sendApprovalNotification(formData.approver, subject, body);
 
   return '稟議申請が正常に作成されました。';
 }
@@ -71,6 +86,7 @@ export function getApprovalRequests() {
           createdAt: row[8],
           approvedAt: row[9],
           rejectionReason: row[10],
+          approverComment: row[11],
         }))
         .filter(
           (request) =>
@@ -80,28 +96,28 @@ export function getApprovalRequests() {
     );
   });
 
-  return approvalRequests;
+  return JSON.stringify(approvalRequests);
 }
 
 /**
  * 稟議申請のステータスを更新する
- * 承認者として指定されたユーザーのみが実行可能
  * @param id 稟議申請ID
  * @param newStatus 新しいステータス ('approved' or 'rejected')
  * @param reason 却下理由 (却下時のみ)
+ * @param approverComment 承認コメント (承認時のみ)
  * @returns 成功メッセージ
  */
 export function updateApprovalStatus(
   id: string,
   newStatus: 'approved' | 'rejected',
   reason?: string,
+  approverComment?: string,
 ) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
   useLock(() => {
     const values = sheet.getDataRange().getValues();
 
-    // IDに基づいて該当する行を検索
     const rowIndex = values.findIndex((row) => row[0] === id);
 
     if (rowIndex === -1) {
@@ -109,25 +125,82 @@ export function updateApprovalStatus(
     }
 
     const userEmail = Session.getActiveUser().getEmail();
-    const approverEmail = values[rowIndex][3]; // スプレッドシートから承認者メールアドレスを取得
+    const approverEmail = values[rowIndex][3];
 
-    // 現在のユーザーが承認者でなければエラー
     if (userEmail !== approverEmail) {
       throw new Error('この稟議を承認・却下する権限がありません。');
     }
 
     const now = new Date();
 
-    // ステータス、承認者、日時、却下理由を更新
     const updatedValues = [...values[rowIndex]];
-    updatedValues[3] = userEmail;
     updatedValues[4] = newStatus;
     updatedValues[9] = Utilities.formatDate(now, 'JST', 'yyyy/MM/dd HH:mm:ss');
     updatedValues[10] = reason || '';
+    updatedValues[11] = approverComment || '';
     sheet
       .getRange(rowIndex + 1, 1, 1, updatedValues.length)
       .setValues([updatedValues]);
+
+    // 申請者にメール通知
+    const requestDetails = {
+      id: updatedValues[0],
+      title: updatedValues[1],
+      applicant: updatedValues[2],
+      approver: updatedValues[3],
+      status: newStatus,
+      comment: approverComment,
+    };
+    const subject = `【稟議${newStatus === 'approved' ? '承認' : '却下'}】${updatedValues[1]}`;
+    const body = generateEmailBody_(requestDetails);
+    sendApprovalNotification(updatedValues[2], subject, body); // 申請者に通知
   });
 
   return `稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
+}
+
+/**
+ * 稟議申請を申請者自身が取り下げる
+ * @param id 稟議申請ID
+ * @returns 成功メッセージ
+ */
+export function withdrawApprovalRequest(id: string) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  useLock(() => {
+    const values = sheet.getDataRange().getValues();
+    const rowIndex = values.findIndex((row) => row[0] === id);
+
+    if (rowIndex === -1) {
+      throw new Error('指定されたIDの稟議申請が見つかりません。');
+    }
+
+    const userEmail = Session.getActiveUser().getEmail();
+    const applicantEmail = values[rowIndex][2];
+
+    if (userEmail !== applicantEmail) {
+      throw new Error('この稟議を取り下げる権限がありません。');
+    }
+
+    const updatedValues = [...values[rowIndex]];
+    updatedValues[4] = 'withdrawn';
+    sheet
+      .getRange(rowIndex + 1, 1, 1, updatedValues.length)
+      .setValues([updatedValues]);
+
+    // 承認者と申請者にメール通知
+    const requestDetails = {
+      id: updatedValues[0],
+      title: updatedValues[1],
+      applicant: updatedValues[2],
+      approver: updatedValues[3],
+      status: 'withdrawn',
+    };
+    const subject = `【稟議取り下げ】${updatedValues[1]}が取り下げられました`;
+    const body = generateEmailBody_(requestDetails);
+    sendApprovalNotification(applicantEmail, subject, body);
+    sendApprovalNotification(updatedValues[3], subject, body);
+  });
+
+  return `稟議申請ID: ${id} が正常に取り下げられました。`;
 }
