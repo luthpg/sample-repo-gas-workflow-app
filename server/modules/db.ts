@@ -8,7 +8,11 @@ import { generateEmailBody_, sendApprovalNotification_ } from './mailer';
  * @returns 成功メッセージ
  */
 export function createApprovalRequest(formData: ApprovalForm) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+  if (!sheet) {
+    throw new Error('DBシート「WF｜Requests」が見つかりません');
+  }
   const userEmail = Session.getActiveUser().getEmail();
   const now = new Date();
 
@@ -21,6 +25,7 @@ export function createApprovalRequest(formData: ApprovalForm) {
       formData.approver, // 指定された承認者を保存
       'pending', // ステータス
       formData.amount,
+      formData.description,
       formData.benefits,
       formData.avoidableRisks,
       Utilities.formatDate(now, 'JST', 'yyyy/MM/dd HH:mm:ss'),
@@ -52,7 +57,11 @@ export function createApprovalRequest(formData: ApprovalForm) {
  */
 export function getApprovalRequests() {
   const userEmail = Session.getActiveUser().getEmail();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+  if (!sheet) {
+    throw new Error('DBシート「WF｜Requests」が見つかりません');
+  }
 
   const approvalRequests: ApprovalRequest[] = [];
 
@@ -68,20 +77,24 @@ export function getApprovalRequests() {
     values.shift();
     approvalRequests.push(
       ...values
-        .map((row) => ({
-          id: row[0],
-          title: row[1],
-          applicant: row[2],
-          approver: row[3],
-          status: row[4],
-          amount: row[5],
-          benefits: row[6],
-          avoidableRisks: row[7],
-          createdAt: row[8],
-          approvedAt: row[9],
-          rejectionReason: row[10],
-          approverComment: row[11],
-        }))
+        .map(
+          (row) =>
+            ({
+              id: row[0],
+              title: row[1],
+              applicant: row[2],
+              approver: row[3],
+              status: row[4],
+              amount: row[5],
+              description: row[6],
+              benefits: row[7],
+              avoidableRisks: row[8],
+              createdAt: row[9],
+              approvedAt: row[10],
+              rejectionReason: row[11],
+              approverComment: row[12],
+            }) satisfies ApprovalRequest,
+        )
         .filter(
           (request) =>
             request.status !== 'deleted' &&
@@ -107,7 +120,11 @@ export function updateApprovalStatus(
   reason?: string,
   approverComment?: string,
 ) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+  if (!sheet) {
+    throw new Error('DBシート「WF｜Requests」が見つかりません');
+  }
 
   useLock_(() => {
     const values = sheet.getDataRange().getValues();
@@ -129,9 +146,9 @@ export function updateApprovalStatus(
 
     const updatedValues = [...values[rowIndex]];
     updatedValues[4] = newStatus;
-    updatedValues[9] = Utilities.formatDate(now, 'JST', 'yyyy/MM/dd HH:mm:ss');
-    updatedValues[10] = reason || '';
-    updatedValues[11] = approverComment || '';
+    updatedValues[10] = Utilities.formatDate(now, 'JST', 'yyyy/MM/dd HH:mm:ss');
+    updatedValues[11] = reason || '';
+    updatedValues[12] = approverComment || '';
     sheet
       .getRange(rowIndex + 1, 1, 1, updatedValues.length)
       .setValues([updatedValues]);
@@ -159,7 +176,11 @@ export function updateApprovalStatus(
  * @returns 成功メッセージ
  */
 export function withdrawApprovalRequest(id: string) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+  if (!sheet) {
+    throw new Error('DBシート「WF｜Requests」が見つかりません');
+  }
 
   useLock_(() => {
     const values = sheet.getDataRange().getValues();

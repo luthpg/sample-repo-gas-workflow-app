@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDate } from '@/lib/date';
 import { parameters } from '@/lib/parameters';
 import { serverScripts } from '@/lib/server';
 import type { ApprovalRequest } from '~/types/approval';
@@ -162,14 +163,14 @@ const DetailDialog = ({
               <p className="text-sm font-medium text-muted-foreground">
                 申請日時
               </p>
-              <p>{new Date(request.createdAt).toLocaleString()}</p>
+              <p>{formatDate(request.createdAt)}</p>
             </div>
             {request.approvedAt && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   承認日時
                 </p>
-                <p>{new Date(request.approvedAt).toLocaleString()}</p>
+                <p>{formatDate(request.approvedAt)}</p>
               </div>
             )}
           </div>

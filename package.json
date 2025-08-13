@@ -14,7 +14,7 @@
     "gas": "gasnuki"
   },
   "dependencies": {
-    "@ciderjs/gasnuki": "^0.2.6",
+    "@ciderjs/gasnuki": "^0.2.9",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -26,6 +26,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
+    "linkify-react": "^4.3.2",
+    "linkifyjs": "^4.3.2",
     "lucide-react": "^0.525.0",
     "next-themes": "^0.4.6",
     "react": "^19.1.1",
@@ -34,14 +36,14 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11",
-    "zod": "^4.0.15"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.3",
+    "@biomejs/biome": "^2.1.4",
     "@google/clasp": "2.5.0",
     "@types/google-apps-script": "^1.0.99",
-    "@types/node": "^24.2.0",
-    "@types/react": "^19.1.9",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@typescript/native-preview": "7.0.0-dev.20250723.1",
     "@vitejs/plugin-react": "^5.0.0",
@@ -51,7 +53,7 @@
     "rolldown-plugin-remove-export": "^0.1.3",
     "tw-animate-css": "^1.3.6",
     "typescript": "~5.8.3",
-    "vite": "^7.1.0",
+    "vite": "^7.1.2",
     "vite-plugin-google-apps-script": "^0.3.2",
     "vite-plugin-singlefile": "^2.3.0"
   }

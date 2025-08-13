@@ -10,7 +10,7 @@ export function doGet(e: WebAppParams) {
   const htmlTemplate = HtmlService.createTemplateFromFile('index');
   const title = '稟議App';
   const userAddress = Session.getActiveUser().getEmail();
-  htmlTemplate.parameter = JSON.stringify({
+  htmlTemplate.parameters = JSON.stringify({
     ...e,
     siteTitle: title,
     userAddress: userAddress,

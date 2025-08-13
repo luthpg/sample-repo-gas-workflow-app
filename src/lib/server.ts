@@ -15,6 +15,7 @@ const mockApprovalRequests: ApprovalRequest[] = [
     approver: 'mock-approver@example.com',
     status: 'pending',
     amount: 50000,
+    description: '説明文\nhttps://google.com',
     benefits: 'テスト効率化',
     avoidableRisks: '予期せぬバグ',
     createdAt: new Date().toISOString(),

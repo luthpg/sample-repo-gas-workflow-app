@@ -65,7 +65,7 @@ type _AppsScriptHistoryFunction = (
   hash: string,
 ) => void;
 
-interface _WebAppLovacationType {
+interface _WebAppLocationType {
   hash: string;
   parameter: Record<string, string>;
   parameters: Record<string, string[]>;
@@ -75,18 +75,13 @@ export declare interface GoogleClientSideApi {
   script: {
     run: _AppsScriptRun;
     url: {
-      getLocation: (
-        callback: (location: _WebAppLovacationType) => void,
-      ) => void;
+      getLocation: (callback: (location: _WebAppLocationType) => void) => void;
     };
     history: {
       push: _AppsScriptHistoryFunction;
       replace: _AppsScriptHistoryFunction;
       setChangeHandler: (
-        callback: (e: {
-          state: object;
-          location: _WebAppLovacationType;
-        }) => void,
+        callback: (e: { state: object; location: _WebAppLocationType }) => void,
       ) => void;
     };
   };

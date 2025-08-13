@@ -32,12 +32,11 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: 'タイトルは2文字以上で入力してください。',
   }),
-  amount: z
-    .number()
-    .nonnegative({
-      message: '金額は正の数で入力してください。',
-    })
+  amount: z.coerce
+    .number<number>()
+    .min(0, { message: '金額は0以上で入力してください。' })
     .optional(),
+  description: z.string().optional(),
   benefits: z.string().optional(),
   avoidableRisks: z.string().optional(),
   approver: z.email({
@@ -54,6 +53,7 @@ export function ApprovalForm() {
     defaultValues: {
       title: '',
       amount: 0,
+      description: '',
       benefits: '',
       avoidableRisks: '',
       approver: '',
@@ -119,6 +119,22 @@ export function ApprovalForm() {
                   <FormLabel>金額</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>説明</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="対象のURL、説明書きなど…"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
