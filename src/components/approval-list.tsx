@@ -1,7 +1,7 @@
+import type { VariantProps } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { ApprovalRequest } from '@/../types/approval';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,20 +29,21 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { parameters } from '@/lib/parameters';
 import { serverScripts } from '@/lib/server';
+import type { ApprovalRequest } from '~/types/approval';
 
 const getStatusBadgeVariant = (
   status: ApprovalRequest['status'],
-): 'success' | 'destructive' | 'warning' | 'info' => {
+): VariantProps<typeof badgeVariants>['variant'] => {
   switch (status) {
     case 'approved':
-      return 'success';
+      return 'secondary';
     case 'rejected':
       return 'destructive';
     case 'withdrawn':
-      return 'warning';
-    case 'pending':
+      return 'destructive';
+    // case 'pending':
     default:
-      return 'info';
+      return 'outline';
   }
 };
 

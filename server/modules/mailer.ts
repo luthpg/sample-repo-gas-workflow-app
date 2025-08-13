@@ -4,7 +4,7 @@
  * @param subject 件名
  * @param body 本文
  */
-export function sendApprovalNotification(
+export function sendApprovalNotification_(
   to: string,
   subject: string,
   body: string,

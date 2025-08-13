@@ -22,8 +22,8 @@ export type ApprovalRequest = {
  */
 export type ApprovalForm = {
   title: string;
-  amount: number;
-  benefits: string;
-  avoidableRisks: string;
+  amount?: number;
+  benefits?: string;
+  avoidableRisks?: string;
   approver: string; // 新しいフィールド
 };

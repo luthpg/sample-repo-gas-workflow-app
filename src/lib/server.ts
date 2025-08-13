@@ -2,8 +2,8 @@ import {
   getPromisedServerScripts,
   type PartialScriptType,
 } from '@ciderjs/gasnuki/promise';
-import type { ApprovalRequest } from '@/../types/approval';
-import type { ServerScripts } from '@/../types/appsscript/client';
+import type { ApprovalRequest } from '~/types/approval';
+import type { ServerScripts } from '~/types/appsscript/client';
 
 // ローカル開発時にGASバックエンドの処理をモックするための仮実装です。
 const mockApprovalRequests: ApprovalRequest[] = [

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import type { ApprovalForm as ApprovalFormType } from '@/../types/approval';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,22 +24,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { serverScripts } from '@/lib/server';
+import type { ApprovalForm as ApprovalFormType } from '~/types/approval';
 
 // フォームのバリデーションスキーマ
 const formSchema = z.object({
   title: z.string().min(2, {
     message: 'タイトルは2文字以上で入力してください。',
   }),
-  amount: z.coerce.number().positive({
-    message: '金額は正の数で入力してください。',
-  }),
-  benefits: z.string().min(10, {
-    message: 'メリットは10文字以上で入力してください。',
-  }),
-  avoidableRisks: z.string().min(10, {
-    message: 'リスクは10文字以上で入力してください。',
-  }),
-  approver: z.string().email({
+  amount: z
+    .number()
+    .nonnegative({
+      message: '金額は正の数で入力してください。',
+    })
+    .optional(),
+  benefits: z.string().optional(),
+  avoidableRisks: z.string().optional(),
+  approver: z.email({
     message: '有効なメールアドレスを入力してください。',
   }),
 });

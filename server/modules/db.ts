@@ -1,24 +1,18 @@
-import type { ApprovalRequest } from '~/types/approval';
-import { useLock } from './lock';
-import { generateEmailBody_, sendApprovalNotification } from './mailer';
+import type { ApprovalForm, ApprovalRequest } from '~/types/approval';
+import { useLock_ } from './lock';
+import { generateEmailBody_, sendApprovalNotification_ } from './mailer';
 
 /**
  * 新しい稟議申請を作成し、スプレッドシートに追記する
  * @param formData 稟議申請フォームのデータ
  * @returns 成功メッセージ
  */
-export function createApprovalRequest(formData: {
-  title: string;
-  amount: number;
-  benefits: string;
-  avoidableRisks: string;
-  approver: string;
-}) {
+export function createApprovalRequest(formData: ApprovalForm) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const userEmail = Session.getActiveUser().getEmail();
   const now = new Date();
 
-  useLock(() => {
+  useLock_(() => {
     // スプレッドシートの最終行にデータを追記
     sheet.appendRow([
       `APR-${Utilities.getUuid()}`, // ユニークなID
@@ -46,8 +40,8 @@ export function createApprovalRequest(formData: {
   };
   const subject = `【稟議申請】新しい稟議が届きました: ${formData.title}`;
   const body = generateEmailBody_(requestDetails);
-  sendApprovalNotification(userEmail, subject, body);
-  sendApprovalNotification(formData.approver, subject, body);
+  sendApprovalNotification_(userEmail, subject, body);
+  sendApprovalNotification_(formData.approver, subject, body);
 
   return '稟議申請が正常に作成されました。';
 }
@@ -62,7 +56,7 @@ export function getApprovalRequests() {
 
   const approvalRequests: ApprovalRequest[] = [];
 
-  useLock(() => {
+  useLock_(() => {
     const range = sheet.getDataRange();
     const values = range.getValues();
 
@@ -115,7 +109,7 @@ export function updateApprovalStatus(
 ) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-  useLock(() => {
+  useLock_(() => {
     const values = sheet.getDataRange().getValues();
 
     const rowIndex = values.findIndex((row) => row[0] === id);
@@ -153,7 +147,7 @@ export function updateApprovalStatus(
     };
     const subject = `【稟議${newStatus === 'approved' ? '承認' : '却下'}】${updatedValues[1]}`;
     const body = generateEmailBody_(requestDetails);
-    sendApprovalNotification(updatedValues[2], subject, body); // 申請者に通知
+    sendApprovalNotification_(updatedValues[2], subject, body); // 申請者に通知
   });
 
   return `稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
@@ -167,7 +161,7 @@ export function updateApprovalStatus(
 export function withdrawApprovalRequest(id: string) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-  useLock(() => {
+  useLock_(() => {
     const values = sheet.getDataRange().getValues();
     const rowIndex = values.findIndex((row) => row[0] === id);
 
@@ -198,8 +192,8 @@ export function withdrawApprovalRequest(id: string) {
     };
     const subject = `【稟議取り下げ】${updatedValues[1]}が取り下げられました`;
     const body = generateEmailBody_(requestDetails);
-    sendApprovalNotification(applicantEmail, subject, body);
-    sendApprovalNotification(updatedValues[3], subject, body);
+    sendApprovalNotification_(applicantEmail, subject, body);
+    sendApprovalNotification_(updatedValues[3], subject, body);
   });
 
   return `稟議申請ID: ${id} が正常に取り下げられました。`;

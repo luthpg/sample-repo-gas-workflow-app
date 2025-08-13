@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { ApprovalForm } from '@/components/approval-form';
 import { ModeToggle } from '@/components/mode-toggle';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { parameters } from '@/lib/parameters';
-import { ApprovalForm } from './approval-form';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export function Header() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);

@@ -4,7 +4,7 @@
  * @param callback 排他制御下で実行したい関数
  * @returns なし
  */
-export function useLock(callback: () => void) {
+export function useLock_(callback: () => void) {
   const lockService = LockService.getScriptLock();
   try {
     while (!lockService.hasLock()) {
