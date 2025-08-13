@@ -7,9 +7,30 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), gas(), viteSingleFile()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    gas({
+      replaceRules: [
+        {
+          from: /this\.hasProtocol\(\)\?this\.(\S+?):`\$\{e\}:\/\/\$\{this\.v\}`/,
+          to: 'this.$1',
+        },
+        {
+          from: /https:\/\/radix-ui\.com\/primitives\/docs\/components\/\$\{t\.docsSlug\}/g,
+          to: '--masked-url--',
+        },
+      ],
+    }),
+    viteSingleFile(),
+    {
+      name: 'remove-urls',
+      generateBundle() {},
+    },
+  ],
   build: {
     outDir: 'dist',
+    minify: 'terser',
   },
   resolve: {
     alias: {

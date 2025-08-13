@@ -1,4 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
+import Linkify from 'linkify-react';
+import type { Opts as LinkifyOptions } from 'linkifyjs';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
@@ -74,6 +76,12 @@ const DetailDialog = ({
 
   if (!request) return null;
 
+  const linkifyOptions: LinkifyOptions = {
+    className: 'text-blue-400',
+    target: '_blank',
+    rel: 'noopener noreferrer',
+  };
+
   const handleApproveWithComment = () => {
     onUpdateStatus(request.id, 'approved', undefined, approveComment);
     setOpenApproveDialog(false);
@@ -122,15 +130,42 @@ const DetailDialog = ({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
+                説明書き
+              </p>
+              <Linkify
+                as="p"
+                options={linkifyOptions}
+                className="whitespace-pre-wrap"
+              >
+                {request.description}
+              </Linkify>
+              <p className="whitespace-pre-wrap">{request.description}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
                 導入によるメリット
               </p>
-              <p>{request.benefits}</p>
+              {/* <Linkify
+                as="p"
+                options={linkifyOptions}
+                className="whitespace-pre-wrap"
+              >
+                {request.benefits}
+              </Linkify> */}
+              <p className="whitespace-pre-wrap">{request.benefits}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 懸念されるリスク
               </p>
-              <p>{request.avoidableRisks}</p>
+              {/* <Linkify
+                as="p"
+                options={linkifyOptions}
+                className="whitespace-pre-wrap"
+              >
+                {request.avoidableRisks}
+              </Linkify> */}
+              <p className="whitespace-pre-wrap">{request.avoidableRisks}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -148,7 +183,14 @@ const DetailDialog = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   承認者コメント
                 </p>
-                <p>{request.approverComment}</p>
+                {/* <Linkify
+                  as="p"
+                  options={linkifyOptions}
+                  className="whitespace-pre-wrap"
+                >
+                  {request.approverComment}
+                </Linkify> */}
+                <p className="whitespace-pre-wrap">{request.approverComment}</p>
               </div>
             )}
             {request.rejectionReason && (
@@ -156,7 +198,14 @@ const DetailDialog = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   却下理由
                 </p>
-                <p>{request.rejectionReason}</p>
+                {/* <Linkify
+                  as="p"
+                  options={linkifyOptions}
+                  className="whitespace-pre-wrap"
+                >
+                  {request.rejectionReason}
+                </Linkify> */}
+                <p className="whitespace-pre-wrap">{request.rejectionReason}</p>
               </div>
             )}
             <div>
