@@ -2,6 +2,7 @@ import {
   getPromisedServerScripts,
   type PartialScriptType,
 } from '@ciderjs/gasnuki/promise';
+import { parameters } from '@/lib/parameters';
 import type { ApprovalRequest } from '~/types/approval';
 import type { ServerScripts } from '~/types/appsscript/client';
 
@@ -10,16 +11,13 @@ const mockApprovalRequests: ApprovalRequest[] = [
   {
     id: 'MOCK-001',
     title: 'モック用稟議A',
-    applicant: 'mock-applicant@example.com',
+    applicant: parameters.userAddress,
     approver: 'mock-approver@example.com',
     status: 'pending',
     amount: 50000,
     benefits: 'テスト効率化',
     avoidableRisks: '予期せぬバグ',
     createdAt: new Date().toISOString(),
-    approvedAt: null,
-    rejectionReason: null,
-    approverComment: null, // 新しいフィールド
   },
   {
     id: 'MOCK-002',
@@ -32,8 +30,18 @@ const mockApprovalRequests: ApprovalRequest[] = [
     avoidableRisks: 'コスト増',
     createdAt: new Date().toISOString(),
     approvedAt: new Date().toISOString(),
-    rejectionReason: null,
-    approverComment: '承認します。', // 新しいフィールド
+    approverComment: '承認します。',
+  },
+  {
+    id: 'MOCK-003',
+    title: 'モック用稟議C',
+    applicant: 'mock-approver@example.com',
+    approver: parameters.userAddress,
+    status: 'withdrawn',
+    amount: 0,
+    avoidableRisks: 'ストレス禿',
+    createdAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString(),
   },
 ];
 
@@ -43,12 +51,9 @@ const mockup: PartialScriptType<ServerScripts> = {
     const newRequest: ApprovalRequest = {
       id: `MOCK-${mockApprovalRequests.length + 1}`,
       ...formData,
-      applicant: 'mock-applicant@example.com',
+      applicant: parameters.userAddress,
       status: 'pending',
       createdAt: new Date().toISOString(),
-      approvedAt: null,
-      rejectionReason: null,
-      approverComment: null,
     };
     mockApprovalRequests.push(newRequest);
     return 'Mock: 稟議申請が正常に作成されました。';
@@ -60,12 +65,11 @@ const mockup: PartialScriptType<ServerScripts> = {
   updateApprovalStatus: async (id, newStatus, reason, approverComment) => {
     console.log(`Mock: updateApprovalStatus called for ${id} to ${newStatus}`);
     const request = mockApprovalRequests.find((req) => req.id === id);
-    if (request && request.approver === 'mock-approver@example.com') {
-      // 承認者チェック
+    if (request && request.approver === parameters.userAddress) {
       request.status = newStatus;
       request.approvedAt = new Date().toISOString();
-      request.rejectionReason = reason || null;
-      request.approverComment = approverComment || null; // コメントを保存
+      request.rejectionReason = reason;
+      request.approverComment = approverComment;
       return `Mock: 稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
     }
     throw new Error('Mock: 稟議申請が見つからないか、権限がありません。');
@@ -73,8 +77,7 @@ const mockup: PartialScriptType<ServerScripts> = {
   withdrawApprovalRequest: async (id) => {
     console.log(`Mock: withdrawApprovalRequest called for ${id}`);
     const request = mockApprovalRequests.find((req) => req.id === id);
-    if (request && request.applicant === 'mock-applicant@example.com') {
-      // 申請者チェック
+    if (request && request.applicant === parameters.userAddress) {
       request.status = 'withdrawn';
       return `Mock: 稟議申請ID: ${id} が正常に取り下げられました。`;
     }

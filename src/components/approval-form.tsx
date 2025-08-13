@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { serverScripts } from '@/lib/server';
 import type { ApprovalForm as ApprovalFormType } from '~/types/approval';
 
@@ -46,6 +47,7 @@ const formSchema = z.object({
 
 export function ApprovalForm() {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const form = useForm<ApprovalFormType>({
     resolver: zodResolver(formSchema),
@@ -78,7 +80,13 @@ export function ApprovalForm() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="text-sm">
-          <PlusCircle className="mr-2 h-4 w-4" /> 新規申請
+          {isMobile ? (
+            <PlusCircle className="h-4 w-4" />
+          ) : (
+            <>
+              <PlusCircle className="h-4 w-4" /> 新規申請
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">

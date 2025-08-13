@@ -110,13 +110,13 @@ const DetailDialog = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   承認者
                 </p>
-                <p className="font-semibold">{request.approver || '未指定'}</p>
+                <p className="font-semibold">{request.approver}</p>
               </div>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">金額</p>
               <p className="font-semibold">
-                ¥{request.amount.toLocaleString()}
+                ¥{(request.amount ?? 0).toLocaleString()}
               </p>
             </div>
             <div>
@@ -137,9 +137,9 @@ const DetailDialog = ({
               </p>
               <Badge variant={getStatusBadgeVariant(request.status)}>
                 {request.status === 'pending' && '未承認'}
-                {request.status === 'approved' && '承認済み'}
-                {request.status === 'rejected' && '却下済み'}
-                {request.status === 'withdrawn' && '取り下げ済み'}
+                {request.status === 'approved' && '承認済'}
+                {request.status === 'rejected' && '却下済'}
+                {request.status === 'withdrawn' && '取下済'}
               </Badge>
             </div>
             {request.approverComment && (
@@ -313,10 +313,10 @@ export function ApprovalList() {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>タイトル</TableHead>
-                  <TableHead>申請者</TableHead>
-                  <TableHead>承認者</TableHead>
                   <TableHead>金額</TableHead>
                   <TableHead>ステータス</TableHead>
+                  <TableHead>申請者</TableHead>
+                  <TableHead>承認者</TableHead>
                   <TableHead className="text-right">アクション</TableHead>
                 </TableRow>
               </TableHeader>
@@ -325,9 +325,9 @@ export function ApprovalList() {
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">{request.id}</TableCell>
                     <TableCell>{request.title}</TableCell>
-                    <TableCell>{request.applicant}</TableCell>
-                    <TableCell>{request.approver}</TableCell>
-                    <TableCell>¥{request.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      ¥{(request.amount ?? 0).toLocaleString()}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(request.status)}>
                         {request.status === 'pending' && '未承認'}
@@ -336,6 +336,8 @@ export function ApprovalList() {
                         {request.status === 'withdrawn' && '取り下げ済み'}
                       </Badge>
                     </TableCell>
+                    <TableCell>{request.applicant}</TableCell>
+                    <TableCell>{request.approver}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"

@@ -12,7 +12,7 @@ try {
     ...parameters,
     parameter: {},
     siteTitle: '',
-    userAddress: 'user@example.com',
+    userAddress: 'mock-applicant@example.com',
   };
 }
 

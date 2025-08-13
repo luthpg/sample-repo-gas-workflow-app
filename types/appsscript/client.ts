@@ -25,7 +25,12 @@ export type ServerScripts = {
    * @param approverComment 承認コメント (承認時のみ)
    * @returns 成功メッセージ
    */
-  updateApprovalStatus(id: string, newStatus: 'approved' | 'rejected', reason?: string, approverComment?: string): string;
+  updateApprovalStatus(
+    id: string,
+    newStatus: 'approved' | 'rejected',
+    reason?: string,
+    approverComment?: string,
+  ): string;
 
   /**
    * 稟議申請を申請者自身が取り下げる
@@ -33,7 +38,7 @@ export type ServerScripts = {
    * @returns 成功メッセージ
    */
   withdrawApprovalRequest(id: string): string;
-}
+};
 
 // Auto-generated Types for GoogleAppsScript in client-side code
 
