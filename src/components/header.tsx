@@ -1,26 +1,9 @@
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import { ApprovalForm } from '@/components/approval-form';
 import { UserAvatar } from '@/components/user-avatar';
 import { parameters } from '@/lib/parameters';
 
 export function Header() {
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    // ユーザー情報を取得
-    const fetchUserEmail = async () => {
-      try {
-        setCurrentUserEmail(parameters.userAddress);
-      } catch (error) {
-        toast.error('ユーザー情報取得エラー', {
-          description: `ユーザーメールアドレスの取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
-        });
-        console.error('GASエラー:', error);
-      }
-    };
-    fetchUserEmail();
-  }, []);
+  const currentUserEmail = parameters.userAddress;
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) pb-2 mb-6">

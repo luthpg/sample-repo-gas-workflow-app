@@ -4,14 +4,28 @@
  * @param callback 排他制御下で実行したい関数
  * @returns なし
  */
-export function useLock_(callback: () => void) {
+export function useLock_<T>(
+  callback: () => T,
+  coolTimeInMilliseconds = 100,
+  timeoutInMilliseconds = 10000,
+): T {
   const lockService = LockService.getScriptLock();
+  let usedTime = 0;
+  let returnValue: T;
   try {
-    while (!lockService.hasLock()) {
-      Utilities.sleep(10);
+    while (
+      !lockService.tryLock(coolTimeInMilliseconds) ||
+      usedTime <= timeoutInMilliseconds
+    ) {
+      usedTime += coolTimeInMilliseconds;
     }
-    callback();
+    if (!lockService.hasLock()) throw Error('スクリプトロックを取得できません');
+    returnValue = callback();
+  } catch (e) {
+    // biome-ignore lint/complexity/noUselessCatch: try-catch is required for locking release
+    throw e;
   } finally {
     lockService.releaseLock();
   }
+  return returnValue;
 }

@@ -8,9 +8,10 @@ export function sendApprovalNotification_(
   to: string,
   subject: string,
   body: string,
+  options: GoogleAppsScript.Gmail.GmailAdvancedOptions = {},
 ) {
   try {
-    GmailApp.sendEmail(to, subject, body);
+    GmailApp.sendEmail(to, subject, body, options);
     console.log(`Email sent to ${to} with subject: ${subject}`);
   } catch (e) {
     console.error(

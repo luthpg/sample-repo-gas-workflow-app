@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Loader } from '@/components/loading-spinner';
 import {
   Table,
   TableBody,
@@ -269,17 +270,16 @@ export function ApprovalList() {
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<ApprovalRequest | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
       const allRequests = await serverScripts.getApprovalRequests();
       setRequests(JSON.parse(allRequests));
-
       setCurrentUserEmail(parameters.userAddress);
     } catch (error) {
       toast.error('データ取得エラー', {
@@ -295,6 +295,26 @@ export function ApprovalList() {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: functions is not required
+  useEffect(() => {
+    // URLパラメータからIDを取得
+    const targetId = parameters.parameter?.id;
+
+    // ローディングが完了し、データがあり、まだ初期処理が完了していない場合に実行
+    if (!loading && requests.length > 0 && targetId && !initialLoadDone) {
+      const targetRequest = requests.find((r) => r.id === targetId);
+      if (targetRequest) {
+        handleOpenDetailDialog(targetRequest);
+      } else {
+        toast.error('指定された申請が見つかりません', {
+          description: `ID: ${targetId} の申請は存在しないか、アクセス権がありません。`,
+        });
+      }
+      // 初期処理が完了したことをマーク
+      setInitialLoadDone(true);
+    }
+  }, [loading, requests, initialLoadDone]);
 
   const handleUpdateStatus = async (
     id: string,
@@ -336,8 +356,13 @@ export function ApprovalList() {
     setOpenDetailDialog(true);
   };
 
-  if (loading) {
-    return <p>ロード中...</p>;
+  // ★修正: 初回ロード時のみローディングスピナーを表示
+  if (loading && requests.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="w-8 h-8 text-muted-foreground" />
+      </div>
+    );
   }
 
   return (

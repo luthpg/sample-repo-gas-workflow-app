@@ -2,6 +2,8 @@ import type { ApprovalForm, ApprovalRequest } from '~/types/approval';
 import { useLock_ } from './lock';
 import { generateEmailBody_, sendApprovalNotification_ } from './mailer';
 
+const DB_SHEET_NAME = 'WF｜Requests';
+
 /**
  * 新しい稟議申請を作成し、スプレッドシートに追記する
  * @param formData 稟議申請フォームのデータ
@@ -9,17 +11,19 @@ import { generateEmailBody_, sendApprovalNotification_ } from './mailer';
  */
 export function createApprovalRequest(formData: ApprovalForm) {
   const sheet =
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
   if (!sheet) {
-    throw new Error('DBシート「WF｜Requests」が見つかりません');
+    throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
   }
   const userEmail = Session.getActiveUser().getEmail();
   const now = new Date();
 
+  const newId = `APR-${Utilities.getUuid()}`;
+
   useLock_(() => {
     // スプレッドシートの最終行にデータを追記
     sheet.appendRow([
-      `APR-${Utilities.getUuid()}`, // ユニークなID
+      newId, // 生成したIDを使用
       formData.title,
       userEmail,
       formData.approver, // 指定された承認者を保存
@@ -37,7 +41,7 @@ export function createApprovalRequest(formData: ApprovalForm) {
 
   // 申請者と承認者にメール通知
   const requestDetails = {
-    id: `APR-${Utilities.getUuid()}`,
+    id: newId,
     title: formData.title,
     applicant: userEmail,
     approver: formData.approver,
@@ -45,8 +49,9 @@ export function createApprovalRequest(formData: ApprovalForm) {
   };
   const subject = `【稟議申請】新しい稟議が届きました: ${formData.title}`;
   const body = generateEmailBody_(requestDetails);
-  sendApprovalNotification_(userEmail, subject, body);
-  sendApprovalNotification_(formData.approver, subject, body);
+  sendApprovalNotification_(formData.approver, subject, body, {
+    cc: userEmail,
+  });
 
   return '稟議申請が正常に作成されました。';
 }
@@ -58,9 +63,9 @@ export function createApprovalRequest(formData: ApprovalForm) {
 export function getApprovalRequests() {
   const userEmail = Session.getActiveUser().getEmail();
   const sheet =
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
   if (!sheet) {
-    throw new Error('DBシート「WF｜Requests」が見つかりません');
+    throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
   }
 
   const approvalRequests: ApprovalRequest[] = [];
@@ -121,9 +126,9 @@ export function updateApprovalStatus(
   approverComment?: string,
 ) {
   const sheet =
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
   if (!sheet) {
-    throw new Error('DBシート「WF｜Requests」が見つかりません');
+    throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
   }
 
   useLock_(() => {
@@ -177,9 +182,9 @@ export function updateApprovalStatus(
  */
 export function withdrawApprovalRequest(id: string) {
   const sheet =
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WF｜Requests');
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
   if (!sheet) {
-    throw new Error('DBシート「WF｜Requests」が見つかりません');
+    throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
   }
 
   useLock_(() => {
