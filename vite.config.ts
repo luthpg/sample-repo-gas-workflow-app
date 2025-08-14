@@ -11,30 +11,23 @@ export default defineConfig({
     react(),
     tailwindcss(),
     gas({
-      replaceRules: [
-        {
-          from: /this\.hasProtocol\(\)\?this\.(\S+?):`\$\{e\}:\/\/\$\{this\..+?\}`/,
-          to: 'this.$1',
-        },
-        {
-          from: /https:\/\/radix-ui\.com\/primitives\/docs\/components\/\$\{.+?\.docsSlug\}/g,
-          to: '--masked-url--',
-        },
-        {
-          from: /`http:\/\/\[\$\{(.+?)\}\]`/g,
-          to: '"http://["+$1+"]"'
-        },
-      ],
+      replace: {
+        replaceRules: [
+          {
+            from: /this\.hasProtocol\(\)\?this\.(\S+?):`\$\{e\}:\/\/\$\{this\..+?\}`/,
+            to: 'this.$1',
+          },
+          {
+            from: /`http:\/\/\[\$\{(.+?)\}\]`/g,
+            to: '"http://["+$1+"]"',
+          },
+        ],
+      },
     }),
     viteSingleFile(),
-    {
-      name: 'remove-urls',
-      generateBundle() {},
-    },
   ],
   build: {
     outDir: 'dist',
-    minify: 'terser',
   },
   resolve: {
     alias: {

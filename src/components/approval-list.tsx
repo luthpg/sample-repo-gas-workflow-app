@@ -139,33 +139,30 @@ const DetailDialog = ({
               >
                 {request.description}
               </Linkify>
-              <p className="whitespace-pre-wrap">{request.description}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 導入によるメリット
               </p>
-              {/* <Linkify
+              <Linkify
                 as="p"
                 options={linkifyOptions}
                 className="whitespace-pre-wrap"
               >
                 {request.benefits}
-              </Linkify> */}
-              <p className="whitespace-pre-wrap">{request.benefits}</p>
+              </Linkify>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 懸念されるリスク
               </p>
-              {/* <Linkify
+              <Linkify
                 as="p"
                 options={linkifyOptions}
                 className="whitespace-pre-wrap"
               >
                 {request.avoidableRisks}
-              </Linkify> */}
-              <p className="whitespace-pre-wrap">{request.avoidableRisks}</p>
+              </Linkify>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -183,14 +180,13 @@ const DetailDialog = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   承認者コメント
                 </p>
-                {/* <Linkify
+                <Linkify
                   as="p"
                   options={linkifyOptions}
                   className="whitespace-pre-wrap"
                 >
                   {request.approverComment}
-                </Linkify> */}
-                <p className="whitespace-pre-wrap">{request.approverComment}</p>
+                </Linkify>
               </div>
             )}
             {request.rejectionReason && (
@@ -198,14 +194,13 @@ const DetailDialog = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   却下理由
                 </p>
-                {/* <Linkify
+                <Linkify
                   as="p"
                   options={linkifyOptions}
                   className="whitespace-pre-wrap"
                 >
                   {request.rejectionReason}
-                </Linkify> */}
-                <p className="whitespace-pre-wrap">{request.rejectionReason}</p>
+                </Linkify>
               </div>
             )}
             <div>
