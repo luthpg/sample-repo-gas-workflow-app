@@ -19,7 +19,6 @@ export function useLock_<T>(
     ) {
       usedTime += coolTimeInMilliseconds;
     }
-    if (!lockService.hasLock()) throw Error('スクリプトロックを取得できません');
     returnValue = callback();
   } catch (e) {
     // biome-ignore lint/complexity/noUselessCatch: try-catch is required for locking release

@@ -30,6 +30,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/lib/date';
 import { parameters } from '@/lib/parameters';
 import { serverScripts } from '@/lib/server';
@@ -48,6 +49,21 @@ const getStatusBadgeVariant = (
     // case 'pending':
     default:
       return 'outline';
+  }
+};
+
+const getStatusText = (status: ApprovalRequest['status']) => {
+  switch (status) {
+    case 'pending':
+      return '未承認';
+    case 'approved':
+      return '承認済';
+    case 'rejected':
+      return '却下済';
+    case 'withdrawn':
+      return '取下済';
+    default:
+      return '';
   }
 };
 
@@ -103,12 +119,12 @@ const DetailDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>稟議詳細: {request.title}</DialogTitle>
             <DialogDescription>ID: {request.id}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4 overflow-y-auto max-h-[70vh]">
+          <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
@@ -170,10 +186,7 @@ const DetailDialog = ({
                 ステータス
               </p>
               <Badge variant={getStatusBadgeVariant(request.status)}>
-                {request.status === 'pending' && '未承認'}
-                {request.status === 'approved' && '承認済'}
-                {request.status === 'rejected' && '却下済'}
-                {request.status === 'withdrawn' && '取下済'}
+                {getStatusText(request.status)}
               </Badge>
             </div>
             {request.approverComment && (
@@ -266,6 +279,107 @@ const DetailDialog = ({
   );
 };
 
+// --- Mobile View Component ---
+const MobileApprovalList = ({
+  requests,
+  onOpenDetailDialog,
+}: {
+  requests: ApprovalRequest[];
+  onOpenDetailDialog: (request: ApprovalRequest) => void;
+}) => (
+  <div className="space-y-4">
+    {requests.map((request) => (
+      <Card
+        key={request.id}
+        onClick={() => onOpenDetailDialog(request)}
+        className="cursor-pointer transition-colors hover:bg-muted/50"
+      >
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <CardTitle className="break-all pr-2 text-base font-bold">
+              {request.title}
+            </CardTitle>
+            <Badge variant={getStatusBadgeVariant(request.status)}>
+              {getStatusText(request.status)}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div>
+            <p className="text-muted-foreground">申請者</p>
+            <p className="truncate font-medium">{request.applicant}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">承認者</p>
+            <p className="truncate font-medium">{request.approver}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">金額</p>
+            <p className="font-medium">
+              ¥{(request.amount ?? 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">申請日</p>
+            <p className="font-medium">{formatDate(request.createdAt)}</p>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
+// --- Desktop View Component ---
+const DesktopApprovalList = ({
+  requests,
+  onOpenDetailDialog,
+}: {
+  requests: ApprovalRequest[];
+  onOpenDetailDialog: (request: ApprovalRequest) => void;
+}) => (
+  <div className="overflow-x-auto">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>タイトル</TableHead>
+          <TableHead>金額</TableHead>
+          <TableHead>ステータス</TableHead>
+          <TableHead>申請者</TableHead>
+          <TableHead>承認者</TableHead>
+          <TableHead className="text-right">アクション</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {requests.map((request) => (
+          <TableRow key={request.id}>
+            <TableCell className="font-medium">{request.id}</TableCell>
+            <TableCell>{request.title}</TableCell>
+            <TableCell>¥{(request.amount ?? 0).toLocaleString()}</TableCell>
+            <TableCell>
+              <Badge variant={getStatusBadgeVariant(request.status)}>
+                {getStatusText(request.status)}
+              </Badge>
+            </TableCell>
+            <TableCell>{request.applicant}</TableCell>
+            <TableCell>{request.approver}</TableCell>
+            <TableCell className="text-right">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenDetailDialog(request)}
+              >
+                詳細
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
+
+// --- Main Component ---
 export function ApprovalList() {
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -274,6 +388,7 @@ export function ApprovalList() {
   const [selectedRequest, setSelectedRequest] =
     useState<ApprovalRequest | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const isMobile = useIsMobile();
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -356,7 +471,6 @@ export function ApprovalList() {
     setOpenDetailDialog(true);
   };
 
-  // ★修正: 初回ロード時のみローディングスピナーを表示
   if (loading && requests.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -366,64 +480,32 @@ export function ApprovalList() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>稟議一覧</CardTitle>
-        <CardDescription>
-          自分が申請した稟議の進捗を確認したり、取り下げたりできます。また、承認者として指定された稟議を承認・却下できます。
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {requests.length === 0 ? (
-          <p>表示する稟議申請はありません。</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>タイトル</TableHead>
-                  <TableHead>金額</TableHead>
-                  <TableHead>ステータス</TableHead>
-                  <TableHead>申請者</TableHead>
-                  <TableHead>承認者</TableHead>
-                  <TableHead className="text-right">アクション</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium">{request.id}</TableCell>
-                    <TableCell>{request.title}</TableCell>
-                    <TableCell>
-                      ¥{(request.amount ?? 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(request.status)}>
-                        {request.status === 'pending' && '未承認'}
-                        {request.status === 'approved' && '承認済み'}
-                        {request.status === 'rejected' && '却下済み'}
-                        {request.status === 'withdrawn' && '取り下げ済み'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{request.applicant}</TableCell>
-                    <TableCell>{request.approver}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDetailDialog(request)}
-                      >
-                        詳細
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
+    <>
+      <Card className="w-full border-0 shadow-none sm:border sm:shadow-sm">
+        <CardHeader>
+          <CardTitle>稟議一覧</CardTitle>
+          <CardDescription>
+            自分が申請した稟議の進捗を確認したり、取り下げたりできます。また、承認者として指定された稟議を承認・却下できます。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {requests.length === 0 ? (
+            <p className="text-center text-muted-foreground">
+              表示する稟議申請はありません。
+            </p>
+          ) : isMobile ? (
+            <MobileApprovalList
+              requests={requests}
+              onOpenDetailDialog={handleOpenDetailDialog}
+            />
+          ) : (
+            <DesktopApprovalList
+              requests={requests}
+              onOpenDetailDialog={handleOpenDetailDialog}
+            />
+          )}
+        </CardContent>
+      </Card>
       <DetailDialog
         request={selectedRequest}
         open={openDetailDialog}
@@ -432,6 +514,6 @@ export function ApprovalList() {
         onUpdateStatus={handleUpdateStatus}
         onWithdrawRequest={handleWithdrawRequest}
       />
-    </Card>
+    </>
   );
 }
