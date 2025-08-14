@@ -13,12 +13,16 @@ export default defineConfig({
     gas({
       replaceRules: [
         {
-          from: /this\.hasProtocol\(\)\?this\.(\S+?):`\$\{e\}:\/\/\$\{this\.v\}`/,
+          from: /this\.hasProtocol\(\)\?this\.(\S+?):`\$\{e\}:\/\/\$\{this\..+?\}`/,
           to: 'this.$1',
         },
         {
-          from: /https:\/\/radix-ui\.com\/primitives\/docs\/components\/\$\{t\.docsSlug\}/g,
+          from: /https:\/\/radix-ui\.com\/primitives\/docs\/components\/\$\{.+?\.docsSlug\}/g,
           to: '--masked-url--',
+        },
+        {
+          from: /`http:\/\/\[\$\{(.+?)\}\]`/g,
+          to: '"http://["+$1+"]"'
         },
       ],
     }),
