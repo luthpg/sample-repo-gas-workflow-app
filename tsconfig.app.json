@@ -30,5 +30,5 @@
       "~/*": ["./*"]
     }
   },
-  "include": ["src", "tests", "server", "types/appsscript/client.ts.ts"]
+  "include": ["src", "tests", "server", "types"]
 }
