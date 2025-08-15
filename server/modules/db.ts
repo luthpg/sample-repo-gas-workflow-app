@@ -39,7 +39,7 @@ export function createApprovalRequest(formData: ApprovalForm) {
     ]);
   });
 
-  // 申請者と承認者にメール通知
+  // 承認者にメール通知（申請者をCcに追加）
   const requestDetails = {
     id: newId,
     title: formData.title,
@@ -57,10 +57,12 @@ export function createApprovalRequest(formData: ApprovalForm) {
 }
 
 /**
- * スプレッドシートからすべての稟議申請を取得する
- * @returns 稟議申請の配列
+ * スプレッドシートから稟議申請を取得する（ページネーション対応）
+ * @param limit 取得件数
+ * @param offset 開始位置
+ * @returns 稟議申請の配列と総件数
  */
-export function getApprovalRequests() {
+export function getApprovalRequests(limit = 10, offset = 0) {
   const userEmail = Session.getActiveUser().getEmail();
   const sheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
@@ -68,20 +70,19 @@ export function getApprovalRequests() {
     throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
   }
 
-  const approvalRequests: ApprovalRequest[] = [];
+  let approvalRequests: ApprovalRequest[] = [];
+  let total = 0;
 
   useLock_(() => {
     const range = sheet.getDataRange();
     const values = range.getValues();
 
     if (values.length <= 1) {
-      return []; // ヘッダーのみの場合は空配列を返す
-    }
-
-    // ヘッダー行をスキップして、データ行をオブジェクトに変換
-    values.shift();
-    approvalRequests.push(
-      ...values
+      // ヘッダーのみの場合は空
+    } else {
+      // ヘッダー行をスキップ
+      values.shift();
+      const allRequests = values
         .map(
           (row) =>
             ({
@@ -104,11 +105,18 @@ export function getApprovalRequests() {
           (request) =>
             request.status !== 'deleted' &&
             (request.approver === userEmail || request.applicant === userEmail),
-        ),
-    );
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ); // 降順にソート
+
+      total = allRequests.length;
+      approvalRequests = allRequests.slice(offset, offset + limit);
+    }
   });
 
-  return JSON.stringify(approvalRequests);
+  return JSON.stringify({ data: approvalRequests, total });
 }
 
 /**
@@ -133,7 +141,6 @@ export function updateApprovalStatus(
 
   useLock_(() => {
     const values = sheet.getDataRange().getValues();
-
     const rowIndex = values.findIndex((row) => row[0] === id);
 
     if (rowIndex === -1) {
@@ -158,18 +165,23 @@ export function updateApprovalStatus(
       .getRange(rowIndex + 1, 1, 1, updatedValues.length)
       .setValues([updatedValues]);
 
-    // 申請者にメール通知
+    // 承認者と申請者にメール通知
+    const applicantEmail = updatedValues[2];
     const requestDetails = {
       id: updatedValues[0],
       title: updatedValues[1],
-      applicant: updatedValues[2],
+      applicant: applicantEmail,
       approver: updatedValues[3],
       status: newStatus,
-      comment: approverComment,
+      comment: newStatus === 'approved' ? approverComment : reason,
     };
     const subject = `【稟議${newStatus === 'approved' ? '承認' : '却下'}】${updatedValues[1]}`;
     const body = generateEmailBody_(requestDetails);
-    sendApprovalNotification_(updatedValues[2], subject, body); // 申請者に通知
+    // 承認者自身がアクションしているので、申請者への通知がメイン
+    // To: 申請者, Cc: 承認者
+    sendApprovalNotification_(applicantEmail, subject, body, {
+      cc: approverEmail,
+    });
   });
 
   return `稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
@@ -209,17 +221,20 @@ export function withdrawApprovalRequest(id: string) {
       .setValues([updatedValues]);
 
     // 承認者と申請者にメール通知
+    const approverEmail = updatedValues[3];
     const requestDetails = {
       id: updatedValues[0],
       title: updatedValues[1],
-      applicant: updatedValues[2],
-      approver: updatedValues[3],
+      applicant: applicantEmail,
+      approver: approverEmail,
       status: 'withdrawn',
     };
     const subject = `【稟議取り下げ】${updatedValues[1]}が取り下げられました`;
     const body = generateEmailBody_(requestDetails);
-    sendApprovalNotification_(applicantEmail, subject, body);
-    sendApprovalNotification_(updatedValues[3], subject, body);
+    // To: 承認者, Cc: 申請者
+    sendApprovalNotification_(approverEmail, subject, body, {
+      cc: applicantEmail,
+    });
   });
 
   return `稟議申請ID: ${id} が正常に取り下げられました。`;

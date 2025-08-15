@@ -7,44 +7,30 @@ import type { ApprovalRequest } from '~/types/approval';
 import type { ServerScripts } from '~/types/appsscript/client';
 
 // ローカル開発時にGASバックエンドの処理をモックするための仮実装です。
-const mockApprovalRequests: ApprovalRequest[] = [
-  {
-    id: 'MOCK-001',
-    title: 'モック用稟議A',
-    applicant: parameters.userAddress,
-    approver: 'mock-approver@example.com',
-    status: 'pending',
-    amount: 50000,
-    description: '説明文\nhttps://google.com',
+const mockApprovalRequests: ApprovalRequest[] = Array.from(
+  { length: 25 },
+  (_, i) => ({
+    id: `MOCK-${i + 1}`,
+    title: `モック用稟議 ${i + 1}`,
+    applicant:
+      i % 3 === 0 ? parameters.userAddress : `mock-user${i}@example.com`,
+    approver:
+      i % 2 === 0 ? parameters.userAddress : `mock-approver${i}@example.com`,
+    status: ['pending', 'approved', 'rejected', 'withdrawn'][
+      i % 4
+    ] as ApprovalRequest['status'],
+    amount: (i + 1) * 10000,
+    description: `これはモック用の稟議申請 No.${i + 1} の説明文です。\nhttps://example.com/${i + 1}`,
     benefits: 'テスト効率化',
     avoidableRisks: '予期せぬバグ',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'MOCK-002',
-    title: 'モック用稟議B',
-    applicant: 'mock-approver@example.com',
-    approver: 'mock-approver@example.com',
-    status: 'approved',
-    amount: 150000,
-    benefits: '生産性向上',
-    avoidableRisks: 'コスト増',
-    createdAt: new Date().toISOString(),
-    approvedAt: new Date().toISOString(),
-    approverComment: '承認します。',
-  },
-  {
-    id: 'MOCK-003',
-    title: 'モック用稟議C',
-    applicant: 'mock-approver@example.com',
-    approver: parameters.userAddress,
-    status: 'withdrawn',
-    amount: 0,
-    avoidableRisks: 'ストレス禿',
-    createdAt: new Date().toISOString(),
-    approvedAt: new Date().toISOString(),
-  },
-];
+    createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+    approvedAt:
+      i % 4 === 1
+        ? new Date(Date.now() - (i - 1) * 24 * 60 * 60 * 1000).toISOString()
+        : undefined,
+    approverComment: i % 4 === 1 ? '承認します。' : undefined,
+  }),
+);
 
 const mockup: PartialScriptType<ServerScripts> = {
   createApprovalRequest: async (formData) => {
@@ -56,12 +42,18 @@ const mockup: PartialScriptType<ServerScripts> = {
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    mockApprovalRequests.push(newRequest);
+    mockApprovalRequests.unshift(newRequest); // 先頭に追加
     return 'Mock: 稟議申請が正常に作成されました。';
   },
-  getApprovalRequests: async () => {
-    console.log('Mock: getApprovalRequests called');
-    return JSON.stringify(mockApprovalRequests);
+  getApprovalRequests: async (limit = 10, offset = 0) => {
+    console.log('Mock: getApprovalRequests called with', { limit, offset });
+    const userEmail = parameters.userAddress;
+    const filtered = mockApprovalRequests.filter(
+      (req) => req.applicant === userEmail || req.approver === userEmail,
+    );
+    const data = filtered.slice(offset, offset + limit);
+    const total = filtered.length;
+    return JSON.stringify({ data, total });
   },
   updateApprovalStatus: async (id, newStatus, reason, approverComment) => {
     console.log(`Mock: updateApprovalStatus called for ${id} to ${newStatus}`);

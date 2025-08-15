@@ -1,14 +1,16 @@
 import type { VariantProps } from 'class-variance-authority';
 import Linkify from 'linkify-react';
 import type { Opts as LinkifyOptions } from 'linkifyjs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Loader } from '@/components/loading-spinner';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -20,7 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader } from '@/components/loading-spinner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -119,7 +126,7 @@ const DetailDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>稟議詳細: {request.title}</DialogTitle>
             <DialogDescription>ID: {request.id}</DialogDescription>
@@ -390,11 +397,22 @@ export function ApprovalList() {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const isMobile = useIsMobile();
 
-  const fetchRequests = async () => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const allRequests = await serverScripts.getApprovalRequests();
-      setRequests(JSON.parse(allRequests));
+      const resultJson = await serverScripts.getApprovalRequests(
+        itemsPerPage,
+        (currentPage - 1) * itemsPerPage,
+      );
+      const result = JSON.parse(resultJson);
+      setRequests(result.data || []);
+      setTotalItems(result.total || 0);
       setCurrentUserEmail(parameters.userAddress);
     } catch (error) {
       toast.error('データ取得エラー', {
@@ -404,19 +422,15 @@ export function ApprovalList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: onMounted
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: functions is not required
   useEffect(() => {
-    // URLパラメータからIDを取得
     const targetId = parameters.parameter?.id;
-
-    // ローディングが完了し、データがあり、まだ初期処理が完了していない場合に実行
     if (!loading && requests.length > 0 && targetId && !initialLoadDone) {
       const targetRequest = requests.find((r) => r.id === targetId);
       if (targetRequest) {
@@ -426,7 +440,6 @@ export function ApprovalList() {
           description: `ID: ${targetId} の申請は存在しないか、アクセス権がありません。`,
         });
       }
-      // 初期処理が完了したことをマーク
       setInitialLoadDone(true);
     }
   }, [loading, requests, initialLoadDone]);
@@ -437,32 +450,38 @@ export function ApprovalList() {
     reason?: string,
     comment?: string,
   ) => {
+    setLoading(true);
     try {
       await serverScripts.updateApprovalStatus(id, status, reason, comment);
       toast.success('更新成功', {
         description: `稟議のステータスが${status === 'approved' ? '承認' : '却下'}されました。`,
       });
-      fetchRequests();
+      fetchRequests(); // データを再取得
     } catch (error) {
       toast.error('更新失敗', {
         description: `ステータス更新に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
       });
       console.error('GASエラー:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleWithdrawRequest = async (id: string) => {
+    setLoading(true);
     try {
       await serverScripts.withdrawApprovalRequest(id);
       toast.success('取り下げ成功', {
         description: '稟議申請が正常に取り下げられました。',
       });
-      fetchRequests();
+      fetchRequests(); // データを再取得
     } catch (error) {
       toast.error('取り下げ失敗', {
         description: `取り下げに失敗しました: ${error instanceof Error ? error.message : String(error)}`,
       });
       console.error('GASエラー:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -471,13 +490,38 @@ export function ApprovalList() {
     setOpenDetailDialog(true);
   };
 
-  if (loading && requests.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader className="w-8 h-8 text-muted-foreground" />
-      </div>
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // ページ数をリセット
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-64 items-center justify-center">
+          <Loader className="h-8 w-8 text-muted-foreground" />
+        </div>
+      );
+    }
+    if (requests.length === 0) {
+      return (
+        <p className="text-center text-muted-foreground">
+          表示する稟議申請はありません。
+        </p>
+      );
+    }
+    return isMobile ? (
+      <MobileApprovalList
+        requests={requests}
+        onOpenDetailDialog={handleOpenDetailDialog}
+      />
+    ) : (
+      <DesktopApprovalList
+        requests={requests}
+        onOpenDetailDialog={handleOpenDetailDialog}
+      />
     );
-  }
+  };
 
   return (
     <>
@@ -488,23 +532,63 @@ export function ApprovalList() {
             自分が申請した稟議の進捗を確認したり、取り下げたりできます。また、承認者として指定された稟議を承認・却下できます。
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {requests.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              表示する稟議申請はありません。
-            </p>
-          ) : isMobile ? (
-            <MobileApprovalList
-              requests={requests}
-              onOpenDetailDialog={handleOpenDetailDialog}
-            />
-          ) : (
-            <DesktopApprovalList
-              requests={requests}
-              onOpenDetailDialog={handleOpenDetailDialog}
-            />
-          )}
-        </CardContent>
+        <CardContent>{renderContent()}</CardContent>
+        {totalItems > 0 && (
+          <CardFooter className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              {totalItems}件中{' '}
+              {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} -{' '}
+              {Math.min(currentPage * itemsPerPage, totalItems)}件を表示
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">表示件数:</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-20">
+                      {itemsPerPage}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {[10, 20, 50].map((size) => (
+                      <DropdownMenuItem
+                        key={size}
+                        onSelect={() => handleItemsPerPageChange(String(size))}
+                      >
+                        {size}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1 || loading}
+                >
+                  前へ
+                </Button>
+                <span className="text-sm">
+                  {currentPage} / {totalPages > 0 ? totalPages : 1}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages || loading}
+                >
+                  次へ
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       <DetailDialog
         request={selectedRequest}

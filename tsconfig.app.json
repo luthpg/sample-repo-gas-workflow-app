@@ -22,11 +22,13 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "composite": true,
+    "esModuleInterop": true,
 
     "paths": {
       "@/*": ["./src/*"],
       "~/*": ["./*"]
     }
   },
-  "include": ["src", "types/appsscript/client.ts.ts"]
+  "include": ["src", "tests", "server", "types/appsscript/client.ts.ts"]
 }

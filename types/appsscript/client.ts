@@ -12,10 +12,12 @@ export type ServerScripts = {
   createApprovalRequest(formData: ApprovalForm): string;
 
   /**
-   * スプレッドシートからすべての稟議申請を取得する
-   * @returns 稟議申請の配列
+   * スプレッドシートから稟議申請を取得する
+   * @param limit 取得件数
+   * @param offset 開始位置
+   * @returns 稟議申請の配列と総件数
    */
-  getApprovalRequests(): string;
+  getApprovalRequests(limit: number, offset: number): string;
 
   /**
    * 稟議申請のステータスを更新する

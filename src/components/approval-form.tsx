@@ -1,9 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { type FieldValues, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+import { CurrencyInput, parseCurrencyValue } from '@/components/currency-input';
+import { Loader } from '@/components/loading-spinner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,10 +34,14 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: 'タイトルは2文字以上で入力してください。',
   }),
-  amount: z.coerce
-    .number<number>()
-    .min(0, { message: '金額は0以上で入力してください。' })
-    .optional(),
+  amount: z.preprocess(
+    (v: string) => {
+      return parseCurrencyValue(v);
+    },
+    z.coerce
+      .number<number>()
+      .min(0, { message: '金額は0以上で入力してください。' }),
+  ),
   description: z.string().optional(),
   benefits: z.string().optional(),
   avoidableRisks: z.string().optional(),
@@ -44,12 +50,17 @@ const formSchema = z.object({
   }),
 });
 
-export function ApprovalForm() {
+export function ApprovalForm({
+  onFormSubmitSuccess,
+}: {
+  onFormSubmitSuccess: () => void;
+}) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
 
-  const form = useForm<ApprovalFormType>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FieldValues, unknown, ApprovalFormType>({
+    resolver: zodResolver<FieldValues, unknown, ApprovalFormType>(formSchema),
     defaultValues: {
       title: '',
       amount: 0,
@@ -62,6 +73,7 @@ export function ApprovalForm() {
 
   // フォーム送信時の処理
   async function onSubmit(values: ApprovalFormType) {
+    setIsSubmitting(true);
     try {
       await serverScripts.createApprovalRequest(values);
       toast.success('申請成功', {
@@ -69,10 +81,13 @@ export function ApprovalForm() {
       });
       form.reset();
       setOpen(false);
+      onFormSubmitSuccess();
     } catch (error) {
       toast.error('申請失敗', {
         description: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -89,7 +104,7 @@ export function ApprovalForm() {
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>新規稟議申請</DialogTitle>
           <DialogDescription>
@@ -118,7 +133,7 @@ export function ApprovalForm() {
                 <FormItem>
                   <FormLabel>金額</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <CurrencyInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -185,7 +200,10 @@ export function ApprovalForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit">申請する</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader className="mr-2 h-4 w-4" />}
+              申請する
+            </Button>
           </form>
         </Form>
       </DialogContent>
