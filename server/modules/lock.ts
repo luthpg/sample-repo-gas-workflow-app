@@ -19,10 +19,10 @@ export function useLock_<T>(
     ) {
       usedTime += coolTimeInMilliseconds;
     }
+    if (!lockService.hasLock()) {
+      throw new Error('timeout');
+    }
     returnValue = callback();
-  } catch (e) {
-    // biome-ignore lint/complexity/noUselessCatch: try-catch is required for locking release
-    throw e;
   } finally {
     lockService.releaseLock();
   }

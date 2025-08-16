@@ -440,6 +440,7 @@ export function ApprovalList() {
           description: `ID: ${targetId} の申請は存在しないか、アクセス権がありません。`,
         });
       }
+      google.script.history.replace({}, {}, ''); // 使用済のパラメータをURLから削除
       setInitialLoadDone(true);
     }
   }, [loading, requests, initialLoadDone]);
@@ -456,7 +457,7 @@ export function ApprovalList() {
       toast.success('更新成功', {
         description: `稟議のステータスが${status === 'approved' ? '承認' : '却下'}されました。`,
       });
-      fetchRequests(); // データを再取得
+      await fetchRequests(); // データを再取得
     } catch (error) {
       toast.error('更新失敗', {
         description: `ステータス更新に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
@@ -474,7 +475,7 @@ export function ApprovalList() {
       toast.success('取り下げ成功', {
         description: '稟議申請が正常に取り下げられました。',
       });
-      fetchRequests(); // データを再取得
+      await fetchRequests(); // データを再取得
     } catch (error) {
       toast.error('取り下げ失敗', {
         description: `取り下げに失敗しました: ${error instanceof Error ? error.message : String(error)}`,
