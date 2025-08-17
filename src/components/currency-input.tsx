@@ -1,12 +1,14 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export const parseCurrencyValue = (value: string) => {
-  const digits = value.replace(/\D/g, '');
+// 数値以外の文字を削除
+export const parseCurrencyValue = (value: string | number) => {
+  const digits = String(value).replace(/\D/g, '');
   return Number(digits);
 };
 
-export const formatCurrencyValue = (value: string) => {
+// 通貨形式にフォーマット
+export const formatCurrencyValue = (value: string | number) => {
   const moneyFormatter = new Intl.NumberFormat('ja-JP', {
     currency: 'JPY',
     style: 'currency',
@@ -17,18 +19,28 @@ export const formatCurrencyValue = (value: string) => {
 
 export function CurrencyInput({
   className,
-  type,
   defaultValue,
   onChange,
   ...props
 }: React.ComponentProps<'input'>) {
-  const initialValue = formatCurrencyValue(
-    defaultValue ? defaultValue.toString() : '0',
+  const [isComposing, setIsComposing] = React.useState(false);
+  const [value, setValue] = React.useState(() =>
+    formatCurrencyValue(defaultValue ? String(defaultValue) : '0'),
   );
 
-  const [value, setValue] = React.useReducer((_, next: string) => {
-    return formatCurrencyValue(next);
-  }, initialValue);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // IME入力中でなければフォーマット
+    if (!isComposing) {
+      const formattedValue = formatCurrencyValue(e.target.value);
+      setValue(formattedValue);
+      // react-hook-formに数値を渡すための処理
+      e.target.value = String(parseCurrencyValue(formattedValue));
+      onChange?.(e);
+    } else {
+      // IME入力中はそのままの値をセット
+      setValue(e.target.value);
+    }
+  };
 
   return (
     <input
@@ -41,11 +53,23 @@ export function CurrencyInput({
       )}
       {...props}
       type="text"
-      onChange={(event) => {
-        setValue(event.target.value);
+      inputMode="numeric"
+      value={value}
+      onChange={handleChange}
+      onCompositionStart={() => setIsComposing(true)}
+      onCompositionEnd={(e: React.CompositionEvent<HTMLInputElement>) => {
+        setIsComposing(false);
+        // 変換確定後にフォーマット
+        const formattedValue = formatCurrencyValue(
+          (e.target as HTMLInputElement).value,
+        );
+        setValue(formattedValue);
+        // react-hook-formに数値を渡すための処理
+        const event = {
+          target: { value: String(parseCurrencyValue(formattedValue)) },
+        } as React.ChangeEvent<HTMLInputElement>;
         onChange?.(event);
       }}
-      value={value}
     />
   );
 }

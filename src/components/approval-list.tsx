@@ -3,6 +3,7 @@ import Linkify from 'linkify-react';
 import type { Opts as LinkifyOptions } from 'linkifyjs';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { ApprovalForm } from '@/components/approval-form';
 import { Loader } from '@/components/loading-spinner';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,7 @@ const DetailDialog = ({
   currentUserEmail,
   onUpdateStatus,
   onWithdrawRequest,
+  onEditRequest,
 }: {
   request: ApprovalRequest | null;
   open: boolean;
@@ -94,6 +96,7 @@ const DetailDialog = ({
     comment?: string,
   ) => void;
   onWithdrawRequest: (id: string) => void;
+  onEditRequest: (request: ApprovalRequest) => void;
 }) => {
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
   const [approveComment, setApproveComment] = useState('');
@@ -120,6 +123,11 @@ const DetailDialog = ({
 
   const handleWithdraw = () => {
     onWithdrawRequest(request.id);
+    onOpenChange(false); // 詳細ダイアログを閉じる
+  };
+
+  const handleEdit = () => {
+    onEditRequest(request);
     onOpenChange(false); // 詳細ダイアログを閉じる
   };
 
@@ -239,12 +247,21 @@ const DetailDialog = ({
               </div>
             )}
           </div>
-          <DialogFooter className="sm:justify-end">
+          <DialogFooter className="flex-wrap justify-end gap-2">
             {request.status === 'pending' &&
               request.applicant === currentUserEmail && (
-                <Button variant="outline" onClick={handleWithdraw}>
-                  取り下げ
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleEdit}>
+                    編集
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={handleWithdraw}
+                  >
+                    取り下げ
+                  </Button>
+                </>
               )}
             {request.status === 'pending' &&
               request.approver === currentUserEmail && (
@@ -392,6 +409,7 @@ export function ApprovalList() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<ApprovalRequest | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -457,7 +475,7 @@ export function ApprovalList() {
       toast.success('更新成功', {
         description: `稟議のステータスが${status === 'approved' ? '承認' : '却下'}されました。`,
       });
-      await fetchRequests(); // データを再取得
+      await fetchRequests();
     } catch (error) {
       toast.error('更新失敗', {
         description: `ステータス更新に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
@@ -475,7 +493,7 @@ export function ApprovalList() {
       toast.success('取り下げ成功', {
         description: '稟議申請が正常に取り下げられました。',
       });
-      await fetchRequests(); // データを再取得
+      await fetchRequests();
     } catch (error) {
       toast.error('取り下げ失敗', {
         description: `取り下げに失敗しました: ${error instanceof Error ? error.message : String(error)}`,
@@ -491,9 +509,14 @@ export function ApprovalList() {
     setOpenDetailDialog(true);
   };
 
+  const handleOpenEditDialog = (request: ApprovalRequest) => {
+    setSelectedRequest(request);
+    setOpenEditDialog(true);
+  };
+
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
-    setCurrentPage(1); // ページ数をリセット
+    setCurrentPage(1);
   };
 
   const renderContent = () => {
@@ -546,12 +569,12 @@ export function ApprovalList() {
                 <span className="text-sm">表示件数:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-20">
+                    <Button variant="outline" className="w-10">
                       {itemsPerPage}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    {[10, 20, 50].map((size) => (
+                    {[5, 10, 20, 50, 100].map((size) => (
                       <DropdownMenuItem
                         key={size}
                         onSelect={() => handleItemsPerPageChange(String(size))}
@@ -598,7 +621,20 @@ export function ApprovalList() {
         currentUserEmail={currentUserEmail}
         onUpdateStatus={handleUpdateStatus}
         onWithdrawRequest={handleWithdrawRequest}
+        onEditRequest={handleOpenEditDialog}
       />
+      {/* 編集用フォーム */}
+      {openEditDialog && (
+        <ApprovalForm
+          onFormSubmitSuccess={() => {
+            setOpenEditDialog(false);
+            fetchRequests();
+          }}
+          requestData={selectedRequest}
+          open={openEditDialog}
+          onOpenChange={setOpenEditDialog}
+        />
+      )}
     </>
   );
 }

@@ -10,6 +10,7 @@ import {
 import type { ApprovalForm } from '~/types/approval';
 import {
   createApprovalRequest,
+  editApprovalRequest,
   getApprovalRequests,
   updateApprovalStatus,
   withdrawApprovalRequest,
@@ -104,8 +105,85 @@ describe('Server DB Functions', () => {
       const formData: ApprovalForm = {
         title: 'New Request',
         approver: 'approver@example.com',
+        amount: 0,
       };
       expect(() => createApprovalRequest(formData)).toThrow(
+        'DBシート「WF｜Requests」が見つかりません',
+      );
+    });
+  });
+
+  describe('editApprovalRequest', () => {
+    const mockData = [
+      ['ID', 'Title', 'Applicant', 'Approver', 'Status'],
+      [
+        'APR-001',
+        'Old Title',
+        'user@example.com',
+        'old@example.com',
+        'pending',
+      ],
+      [
+        'APR-002',
+        'Req 2',
+        'another@example.com',
+        'user@example.com',
+        'pending',
+      ],
+      ['APR-003', 'Req 3', 'user@example.com', 'user@example.com', 'approved'],
+    ];
+    const mockRange = { setValue: vi.fn() };
+
+    beforeEach(() => {
+      mockSheet.getDataRange.mockReturnValue({
+        getValues: () => mockData,
+      } as any);
+      mockSheet.getRange.mockReturnValue(mockRange as any);
+      global.Session = {
+        getActiveUser: () => ({ getEmail: () => 'user@example.com' }),
+      } as any;
+    });
+
+    it('稟議申請を正常に編集し、メールを送信する', () => {
+      const formData: ApprovalForm = {
+        title: 'New Title',
+        approver: 'new@example.com',
+        amount: 5000,
+      };
+      const result = editApprovalRequest('APR-001', formData);
+
+      expect(mockSheet.getRange).toHaveBeenCalledWith(2, 2); // Title column
+      expect(mockRange.setValue).toHaveBeenCalledWith('New Title');
+      expect(mailer.sendApprovalNotification_).toHaveBeenCalledWith(
+        'new@example.com',
+        expect.stringContaining('【稟議更新】'),
+        expect.any(String),
+        { cc: 'user@example.com' },
+      );
+      expect(result).toBe('稟議申請が正常に更新されました。');
+    });
+
+    it('権限のないユーザーが編集しようとするとエラーをスローする', () => {
+      expect(() => editApprovalRequest('APR-002', {} as any)).toThrow(
+        'この稟議を編集する権限がありません。',
+      );
+    });
+
+    it('未承認でない稟議を編集しようとするとエラーをスローする', () => {
+      expect(() => editApprovalRequest('APR-003', {} as any)).toThrow(
+        'この稟議は未承認状態ではないため、編集できません。',
+      );
+    });
+
+    it('IDが見つからない場合にエラーをスローする', () => {
+      expect(() => editApprovalRequest('APR-999', {} as any)).toThrow(
+        '指定されたIDの稟議申請が見つかりません。',
+      );
+    });
+
+    it('シートが見つからない場合にエラーをスローする', () => {
+      mockSpreadsheet.getSheetByName.mockReturnValue(null);
+      expect(() => editApprovalRequest('APR-001', {} as any)).toThrow(
         'DBシート「WF｜Requests」が見つかりません',
       );
     });

@@ -42,7 +42,7 @@
   },
   "overrides": [
     {
-      "includes": ["types/**/*"],
+      "includes": ["types/**/*", "tests/**/*"],
       "linter": {
         "rules": {
           "suspicious": {

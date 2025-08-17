@@ -7,7 +7,7 @@ export type ApprovalRequest = {
   applicant: string; // 申請者メールアドレス
   approver: string; // 承認者メールアドレス
   status: 'pending' | 'approved' | 'rejected' | 'withdrawn'; // ステータス
-  amount?: number; // 金額
+  amount: number; // 金額
   description?: string; // 説明
   benefits?: string; // 導入によるメリット
   avoidableRisks?: string; // 懸念されるリスク
@@ -23,7 +23,7 @@ export type ApprovalRequest = {
  */
 export type ApprovalForm = {
   title: string;
-  amount?: number;
+  amount: number;
   description?: string;
   benefits?: string;
   avoidableRisks?: string;

@@ -6,6 +6,9 @@ import { parameters } from '@/lib/parameters';
 import type { ApprovalRequest } from '~/types/approval';
 import type { ServerScripts } from '~/types/appsscript/client';
 
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 // ローカル開発時にGASバックエンドの処理をモックするための仮実装です。
 const mockApprovalRequests: ApprovalRequest[] = Array.from(
   { length: 25 },
@@ -35,6 +38,7 @@ const mockApprovalRequests: ApprovalRequest[] = Array.from(
 const mockup: PartialScriptType<ServerScripts> = {
   createApprovalRequest: async (formData) => {
     console.log('Mock: createApprovalRequest called with', formData);
+    await sleep(1000 * 1.5);
     const newRequest: ApprovalRequest = {
       id: `MOCK-${mockApprovalRequests.length + 1}`,
       ...formData,
@@ -47,6 +51,7 @@ const mockup: PartialScriptType<ServerScripts> = {
   },
   getApprovalRequests: async (limit = 10, offset = 0) => {
     console.log('Mock: getApprovalRequests called with', { limit, offset });
+    await sleep(1000 * 1.5);
     const userEmail = parameters.userAddress;
     const filtered = mockApprovalRequests.filter(
       (req) => req.applicant === userEmail || req.approver === userEmail,
@@ -57,6 +62,7 @@ const mockup: PartialScriptType<ServerScripts> = {
   },
   updateApprovalStatus: async (id, newStatus, reason, approverComment) => {
     console.log(`Mock: updateApprovalStatus called for ${id} to ${newStatus}`);
+    await sleep(1000 * 1.5);
     const request = mockApprovalRequests.find((req) => req.id === id);
     if (request && request.approver === parameters.userAddress) {
       request.status = newStatus;
@@ -69,6 +75,7 @@ const mockup: PartialScriptType<ServerScripts> = {
   },
   withdrawApprovalRequest: async (id) => {
     console.log(`Mock: withdrawApprovalRequest called for ${id}`);
+    await sleep(1000 * 1.5);
     const request = mockApprovalRequests.find((req) => req.id === id);
     if (request && request.applicant === parameters.userAddress) {
       request.status = 'withdrawn';
