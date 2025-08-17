@@ -34,6 +34,9 @@ const mockLock = {
   tryLock: vi.fn(() => true),
   releaseLock: vi.fn(),
 };
+const mockService = {
+  getUrl: vi.fn(() => 'https://script.google.com/macros/s/SCRIPT_ID/exec'),
+};
 
 // mailerとlockモジュールのモック
 vi.spyOn(mailer, 'sendApprovalNotification_').mockImplementation(() => {});
@@ -47,7 +50,6 @@ global.Session = {
   getActiveUser: () => ({ getEmail: () => 'user@example.com' }),
 } as any;
 global.Utilities = {
-  getUuid: () => 'mock-uuid',
   formatDate: (date: Date, tz: string, _format: string) =>
     new Intl.DateTimeFormat('ja-JP', {
       year: 'numeric',
@@ -66,6 +68,9 @@ global.GmailApp = {
 } as any;
 global.LockService = {
   getScriptLock: () => mockLock,
+} as any;
+global.ScriptApp = {
+  getService: () => mockService,
 } as any;
 
 describe('Server DB Functions', () => {
@@ -89,7 +94,7 @@ describe('Server DB Functions', () => {
       const result = createApprovalRequest(formData);
 
       expect(mockSheet.appendRow).toHaveBeenCalledWith(
-        expect.arrayContaining(['APR-mock-uuid', 'New Request']),
+        expect.arrayContaining(['pending', 'New Request']),
       );
       expect(mailer.sendApprovalNotification_).toHaveBeenCalledWith(
         'approver@example.com',

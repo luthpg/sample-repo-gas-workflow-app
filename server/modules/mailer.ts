@@ -35,15 +35,17 @@ export function generateEmailBody_(request: {
   status: string;
   comment?: string | null;
 }) {
+  const url = ScriptApp.getService().getUrl();
+
   let body = `稟議申請のステータスが更新されました。
 
 -----------------------------------
 [稟議詳細]
-ID: ${request.id}
 タイトル: ${request.title}
 申請者: ${request.applicant}
 承認者: ${request.approver || '未指定'}
 現在のステータス: ${request.status}
+対象URL: ${url}?id=${request.id}
 `;
 
   if (request.comment) {

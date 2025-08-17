@@ -1,4 +1,5 @@
 import type { ApprovalForm, ApprovalRequest } from '~/types/approval';
+import { generateUniqueId } from './id';
 import { useLock_ } from './lock';
 import { generateEmailBody_, sendApprovalNotification_ } from './mailer';
 
@@ -33,7 +34,7 @@ export function createApprovalRequest(formData: ApprovalForm) {
   const userEmail = Session.getActiveUser().getEmail();
   const now = new Date();
 
-  const newId = `APR-${Utilities.getUuid()}`;
+  const newId = `APR-${generateUniqueId()}`;
 
   useLock_(() => {
     // スプレッドシートの最終行にデータを追記
