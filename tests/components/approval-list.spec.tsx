@@ -13,7 +13,7 @@ const mockedServerScripts = serverScripts as {
 
 const mockRequests: ApprovalRequest[] = [
   {
-    id: 'APR-001',
+    id: 'APR001',
     title: 'PC購入申請',
     applicant: 'applicant@example.com',
     approver: 'approver@example.com',
@@ -22,7 +22,7 @@ const mockRequests: ApprovalRequest[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'APR-002',
+    id: 'APR_002',
     title: '書籍購入申請',
     applicant: 'approver@example.com',
     approver: 'applicant@example.com',
@@ -136,7 +136,7 @@ describe('ApprovalList', () => {
 
     await waitFor(() => {
       expect(mockedServerScripts.updateApprovalStatus).toHaveBeenCalledWith(
-        'APR-001',
+        'APR_001',
         'approved',
         undefined,
         '承認します',
@@ -169,7 +169,7 @@ describe('ApprovalList', () => {
 
     await waitFor(() => {
       expect(mockedServerScripts.withdrawApprovalRequest).toHaveBeenCalledWith(
-        'APR-001',
+        'APR_001',
       );
       expect(screen.getByText('取り下げ成功')).toBeInTheDocument();
     });
@@ -178,7 +178,7 @@ describe('ApprovalList', () => {
   it('ページネーションが機能する', async () => {
     const manyRequests = Array.from({ length: 15 }, (_, i) => ({
       ...mockRequests[0],
-      id: `APR-${i}`,
+      id: `APR_${i}`,
     }));
     mockedServerScripts.getApprovalRequests.mockResolvedValue(
       JSON.stringify({ data: manyRequests.slice(0, 10), total: 15 }),

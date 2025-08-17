@@ -224,7 +224,10 @@ export function ApprovalForm({
               <FormItem>
                 <FormLabel>回避可能なリスク</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="考えられるリスクと回避策" {...field} />
+                  <Textarea
+                    placeholder="考えられるリスクと本件により回避できる理由"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -122,20 +122,20 @@ describe('Server DB Functions', () => {
     const mockData = [
       ['ID', 'Title', 'Applicant', 'Approver', 'Status'],
       [
-        'APR-001',
+        'APR_001',
         'Old Title',
         'user@example.com',
         'old@example.com',
         'pending',
       ],
       [
-        'APR-002',
+        'APR_002',
         'Req 2',
         'another@example.com',
         'user@example.com',
         'pending',
       ],
-      ['APR-003', 'Req 3', 'user@example.com', 'user@example.com', 'approved'],
+      ['APR_003', 'Req 3', 'user@example.com', 'user@example.com', 'approved'],
     ];
     const mockRange = { setValue: vi.fn() };
 
@@ -155,7 +155,7 @@ describe('Server DB Functions', () => {
         approver: 'new@example.com',
         amount: 5000,
       };
-      const result = editApprovalRequest('APR-001', formData);
+      const result = editApprovalRequest('APR_001', formData);
 
       expect(mockSheet.getRange).toHaveBeenCalledWith(2, 2); // Title column
       expect(mockRange.setValue).toHaveBeenCalledWith('New Title');
@@ -169,26 +169,26 @@ describe('Server DB Functions', () => {
     });
 
     it('権限のないユーザーが編集しようとするとエラーをスローする', () => {
-      expect(() => editApprovalRequest('APR-002', {} as any)).toThrow(
+      expect(() => editApprovalRequest('APR_002', {} as any)).toThrow(
         'この稟議を編集する権限がありません。',
       );
     });
 
     it('未承認でない稟議を編集しようとするとエラーをスローする', () => {
-      expect(() => editApprovalRequest('APR-003', {} as any)).toThrow(
+      expect(() => editApprovalRequest('APR_003', {} as any)).toThrow(
         'この稟議は未承認状態ではないため、編集できません。',
       );
     });
 
     it('IDが見つからない場合にエラーをスローする', () => {
-      expect(() => editApprovalRequest('APR-999', {} as any)).toThrow(
+      expect(() => editApprovalRequest('APR_999', {} as any)).toThrow(
         '指定されたIDの稟議申請が見つかりません。',
       );
     });
 
     it('シートが見つからない場合にエラーをスローする', () => {
       mockSpreadsheet.getSheetByName.mockReturnValue(null);
-      expect(() => editApprovalRequest('APR-001', {} as any)).toThrow(
+      expect(() => editApprovalRequest('APR_001', {} as any)).toThrow(
         'DBシート「WF｜Requests」が見つかりません',
       );
     });
@@ -199,7 +199,7 @@ describe('Server DB Functions', () => {
       const mockData = [
         ['ID', 'Title', 'Applicant', 'Approver', 'Status', 'CreatedAt'],
         [
-          'APR-002', // 新しいものが上に来るようにソートされることを確認
+          'APR_002', // 新しいものが上に来るようにソートされることを確認
           'Req 2',
           'other@example.com',
           'user@example.com',
@@ -207,7 +207,7 @@ describe('Server DB Functions', () => {
           new Date('2023-01-02').toISOString(),
         ],
         [
-          'APR-001',
+          'APR_001',
           'Req 1',
           'user@example.com',
           'other@example.com',
@@ -215,7 +215,7 @@ describe('Server DB Functions', () => {
           new Date('2023-01-01').toISOString(),
         ],
         [
-          'APR-003',
+          'APR_003',
           'Req 3',
           'other@example.com',
           'another@example.com',
@@ -231,9 +231,9 @@ describe('Server DB Functions', () => {
 
       expect(result.data.length).toBe(2);
       expect(result.total).toBe(2);
-      // 日付でソートされているため、APR-002が先頭に来る
-      expect(result.data[0].id).toBe('APR-002');
-      expect(result.data[1].id).toBe('APR-001');
+      // 日付でソートされているため、APR_002が先頭に来る
+      expect(result.data[0].id).toBe('APR_002');
+      expect(result.data[1].id).toBe('APR_001');
     });
 
     it('データがヘッダーのみの場合に空の配列を返す', () => {
@@ -260,7 +260,7 @@ describe('Server DB Functions', () => {
     const mockData = [
       ['ID', 'Title', 'Applicant', 'Approver', 'Status'],
       [
-        'APR-001',
+        'APR_001',
         'Req 1',
         'applicant@example.com',
         'user@example.com',
@@ -282,7 +282,7 @@ describe('Server DB Functions', () => {
     });
 
     it('ステータスを承認に更新し、メールを送信する', () => {
-      updateApprovalStatus('APR-001', 'approved', undefined, 'Looks good');
+      updateApprovalStatus('APR_001', 'approved', undefined, 'Looks good');
       expect(mockRange.setValues).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.arrayContaining(['approved', '', 'Looks good']),
@@ -297,7 +297,7 @@ describe('Server DB Functions', () => {
     });
 
     it('ステータスを却下に更新し、メールを送信する', () => {
-      updateApprovalStatus('APR-001', 'rejected', 'Not approved', undefined);
+      updateApprovalStatus('APR_001', 'rejected', 'Not approved', undefined);
       expect(mockRange.setValues).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.arrayContaining(['rejected', 'Not approved', '']),
@@ -315,20 +315,20 @@ describe('Server DB Functions', () => {
       global.Session = {
         getActiveUser: () => ({ getEmail: () => 'another@example.com' }),
       } as any;
-      expect(() => updateApprovalStatus('APR-001', 'approved')).toThrow(
+      expect(() => updateApprovalStatus('APR_001', 'approved')).toThrow(
         'この稟議を承認・却下する権限がありません。',
       );
     });
 
     it('IDが見つからない場合にエラーをスローする', () => {
-      expect(() => updateApprovalStatus('APR-999', 'approved')).toThrow(
+      expect(() => updateApprovalStatus('APR_999', 'approved')).toThrow(
         '指定されたIDの稟議申請が見つかりません。',
       );
     });
 
     it('シートが見つからない場合にエラーをスローする', () => {
       mockSpreadsheet.getSheetByName.mockReturnValue(null);
-      expect(() => updateApprovalStatus('APR-001', 'approved')).toThrow(
+      expect(() => updateApprovalStatus('APR_001', 'approved')).toThrow(
         'DBシート「WF｜Requests」が見つかりません',
       );
     });
@@ -338,7 +338,7 @@ describe('Server DB Functions', () => {
     const mockData = [
       ['ID', 'Title', 'Applicant', 'Approver', 'Status'],
       [
-        'APR-001',
+        'APR_001',
         'Req 1',
         'user@example.com',
         'approver@example.com',
@@ -360,7 +360,7 @@ describe('Server DB Functions', () => {
     });
 
     it('申請を取り下げ、メールを送信する', () => {
-      withdrawApprovalRequest('APR-001');
+      withdrawApprovalRequest('APR_001');
       expect(mockRange.setValues).toHaveBeenCalledWith(
         expect.arrayContaining([expect.arrayContaining(['withdrawn'])]),
       );
@@ -376,20 +376,20 @@ describe('Server DB Functions', () => {
       global.Session = {
         getActiveUser: () => ({ getEmail: () => 'another@example.com' }),
       } as any;
-      expect(() => withdrawApprovalRequest('APR-001')).toThrow(
+      expect(() => withdrawApprovalRequest('APR_001')).toThrow(
         'この稟議を取り下げる権限がありません。',
       );
     });
 
     it('IDが見つからない場合にエラーをスローする', () => {
-      expect(() => withdrawApprovalRequest('APR-999')).toThrow(
+      expect(() => withdrawApprovalRequest('APR_999')).toThrow(
         '指定されたIDの稟議申請が見つかりません。',
       );
     });
 
     it('シートが見つからない場合にエラーをスローする', () => {
       mockSpreadsheet.getSheetByName.mockReturnValue(null);
-      expect(() => withdrawApprovalRequest('APR-001')).toThrow(
+      expect(() => withdrawApprovalRequest('APR_001')).toThrow(
         'DBシート「WF｜Requests」が見つかりません',
       );
     });

@@ -34,7 +34,7 @@ export function createApprovalRequest(formData: ApprovalForm) {
   const userEmail = Session.getActiveUser().getEmail();
   const now = new Date();
 
-  const newId = `APR-${generateUniqueId()}`;
+  const newId = `APR_${generateUniqueId()}`;
 
   useLock_(() => {
     // スプレッドシートの最終行にデータを追記

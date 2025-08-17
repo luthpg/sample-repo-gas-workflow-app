@@ -48,6 +48,8 @@ export type ServerScripts = {
    * @returns 成功メッセージ
    */
   withdrawApprovalRequest(id: string): string;
+
+  generateUniqueId(): string;
 };
 
 // Auto-generated Types for GoogleAppsScript in client-side code
