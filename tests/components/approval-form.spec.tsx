@@ -26,7 +26,7 @@ describe('ApprovalForm', () => {
     expect(screen.getByLabelText(/説明/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/承認者メールアドレス/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/導入によるメリット/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/懸念されるリスク/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/回避可能なリスク/i)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /申請する/i }),
     ).toBeInTheDocument();
