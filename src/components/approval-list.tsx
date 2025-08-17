@@ -1,10 +1,12 @@
 import type { VariantProps } from 'class-variance-authority';
 import Linkify from 'linkify-react';
 import type { Opts as LinkifyOptions } from 'linkifyjs';
+import { Edit, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ApprovalForm } from '@/components/approval-form';
 import { Loader } from '@/components/loading-spinner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,6 +44,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/lib/date';
 import { parameters } from '@/lib/parameters';
 import { serverScripts } from '@/lib/server';
+import { getUserNameFromEmail } from '@/lib/utils';
 import type { ApprovalRequest } from '~/types/approval';
 
 const getStatusBadgeVariant = (
@@ -252,6 +255,7 @@ const DetailDialog = ({
               request.applicant === currentUserEmail && (
                 <>
                   <Button variant="outline" onClick={handleEdit}>
+                    <Edit className="mr-2 h-4 w-4" />
                     編集
                   </Button>
                   <Button
@@ -259,6 +263,7 @@ const DetailDialog = ({
                     className="border-destructive text-destructive hover:bg-destructive/10"
                     onClick={handleWithdraw}
                   >
+                    <Trash2 className="mr-2 h-4 w-4" />
                     取り下げ
                   </Button>
                 </>
@@ -270,9 +275,11 @@ const DetailDialog = ({
                     variant="outline"
                     onClick={() => setOpenApproveDialog(true)}
                   >
+                    <ThumbsUp className="mr-2 h-4 w-4" />
                     承認
                   </Button>
                   <Button variant="destructive" onClick={handleReject}>
+                    <ThumbsDown className="mr-2 h-4 w-4" />
                     却下
                   </Button>
                 </>
@@ -327,27 +334,45 @@ const MobileApprovalList = ({
               {getStatusText(request.status)}
             </Badge>
           </div>
+          <CardDescription>{formatDate(request.createdAt)}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div>
-            <p className="text-muted-foreground">申請者</p>
-            <p className="truncate font-medium">{request.applicant}</p>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-6 w-6 text-xs">
+              <AvatarFallback>
+                {getUserNameFromEmail(request.applicant)
+                  .slice(0, 1)
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">申請者</span>
+              <span className="font-medium truncate">
+                {getUserNameFromEmail(request.applicant)}
+              </span>
+            </div>
           </div>
-          <div>
-            <p className="text-muted-foreground">承認者</p>
-            <p className="truncate font-medium">{request.approver}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">金額</p>
-            <p className="font-medium">
-              ¥{(request.amount ?? 0).toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">申請日</p>
-            <p className="font-medium">{formatDate(request.createdAt)}</p>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-6 w-6 text-xs">
+              <AvatarFallback>
+                {getUserNameFromEmail(request.approver)
+                  .slice(0, 1)
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">承認者</span>
+              <span className="font-medium truncate">
+                {getUserNameFromEmail(request.approver)}
+              </span>
+            </div>
           </div>
         </CardContent>
+        <CardFooter>
+          <p className="text-lg font-semibold">
+            ¥{(request.amount ?? 0).toLocaleString()}
+          </p>
+        </CardFooter>
       </Card>
     ))}
   </div>
@@ -569,12 +594,12 @@ export function ApprovalList() {
                 <span className="text-sm">表示件数:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-10">
+                    <Button variant="outline" className="w-20">
                       {itemsPerPage}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    {[5, 10, 20, 50, 100].map((size) => (
+                    {[10, 20, 50].map((size) => (
                       <DropdownMenuItem
                         key={size}
                         onSelect={() => handleItemsPerPageChange(String(size))}
