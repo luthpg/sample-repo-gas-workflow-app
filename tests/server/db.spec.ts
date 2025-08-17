@@ -12,6 +12,7 @@ import {
   createApprovalRequest,
   editApprovalRequest,
   getApprovalRequests,
+  getApprovers,
   updateApprovalStatus,
   withdrawApprovalRequest,
 } from '../../server/modules/db';
@@ -33,6 +34,7 @@ const mockSpreadsheet: {
 const mockLock = {
   tryLock: vi.fn(() => true),
   releaseLock: vi.fn(),
+  hasLock: vi.fn(() => true),
 };
 const mockService = {
   getUrl: vi.fn(() => 'https://script.google.com/macros/s/SCRIPT_ID/exec'),
@@ -251,6 +253,70 @@ describe('Server DB Functions', () => {
     it('シートが見つからない場合にエラーをスローする', () => {
       mockSpreadsheet.getSheetByName.mockReturnValue(null);
       expect(() => getApprovalRequests(10, 0)).toThrow(
+        'DBシート「WF｜Requests」が見つかりません',
+      );
+    });
+  });
+
+  describe('getApprovers', () => {
+    it('過去の承認者リストを重複なくソートして返す', () => {
+      const mockData = [
+        ['ID', 'Title', 'Applicant', 'Approver', 'Status', 'CreatedAt'],
+        [
+          '1',
+          'A',
+          'user@example.com',
+          'c@example.com',
+          'p',
+          new Date('2023-01-01').toISOString(),
+        ],
+        [
+          '2',
+          'B',
+          'other@example.com',
+          'd@example.com',
+          'p',
+          new Date('2023-01-02').toISOString(),
+        ],
+        [
+          '3',
+          'C',
+          'user@example.com',
+          'a@example.com',
+          'p',
+          new Date('2023-01-03').toISOString(),
+        ],
+        [
+          '4',
+          'D',
+          'user@example.com',
+          'c@example.com',
+          'p',
+          new Date('2023-01-04').toISOString(),
+        ],
+      ];
+      mockSheet.getDataRange.mockReturnValue({
+        getValues: () => mockData,
+      } as any);
+
+      const result = JSON.parse(getApprovers());
+      expect(result).toEqual(['a@example.com', 'c@example.com']);
+    });
+
+    it('データがヘッダーのみの場合に空の配列を返す', () => {
+      const mockData = [
+        ['ID', 'Title', 'Applicant', 'Approver', 'Status', 'CreatedAt'],
+      ];
+      mockSheet.getDataRange.mockReturnValue({
+        getValues: () => mockData,
+      } as any);
+      const result = JSON.parse(getApprovers());
+      expect(result).toEqual([]);
+    });
+
+    it('シートが見つからない場合にエラーをスローする', () => {
+      mockSpreadsheet.getSheetByName.mockReturnValue(null);
+      expect(() => getApprovers()).toThrow(
         'DBシート「WF｜Requests」が見つかりません',
       );
     });

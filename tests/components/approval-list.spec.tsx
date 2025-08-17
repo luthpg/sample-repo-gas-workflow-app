@@ -13,7 +13,7 @@ const mockedServerScripts = serverScripts as {
 
 const mockRequests: ApprovalRequest[] = [
   {
-    id: 'APR001',
+    id: 'APR_001',
     title: 'PC購入申請',
     applicant: 'applicant@example.com',
     approver: 'approver@example.com',

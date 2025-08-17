@@ -49,6 +49,13 @@ export type ServerScripts = {
    */
   withdrawApprovalRequest(id: string): string;
 
+  /**
+   * 自身の過去の申請情報を参照し、承認者一覧を取得
+   * @param limit 検索する過去申請件数の上限値
+   * @returns 承認者一覧
+   */
+  getApprovers(limit: number): string;
+
   generateUniqueId(): string;
 };
 

@@ -83,6 +83,25 @@ const mockup: PartialScriptType<ServerScripts> = {
     }
     throw new Error('Mock: 稟議申請が見つからないか、権限がありません。');
   },
+  getApprovers: async (limit) => {
+    console.log(`Mock: getApprovers called with ${limit}`);
+    await sleep(1000 * 1.5);
+    await sleep(1000 * 1.5);
+    const userEmail = parameters.userAddress;
+    const filtered = mockApprovalRequests
+      .filter(
+        (req) => req.applicant === userEmail || req.approver === userEmail,
+      )
+      .sort((rowA, rowB) => {
+        return (
+          new Date(rowB.createdAt).getTime() -
+          new Date(rowA.createdAt).getTime()
+        );
+      });
+    const data = filtered.slice(0, limit);
+    const approvers = [...new Set(data.map((req) => req.approver))].sort();
+    return JSON.stringify(approvers);
+  },
 };
 
 // getPromisedServerScripts を使用して、Promiseを返す型安全なサーバー関数ラッパーを生成します。

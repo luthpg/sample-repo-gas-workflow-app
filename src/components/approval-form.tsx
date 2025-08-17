@@ -31,6 +31,7 @@ import type {
   ApprovalForm as ApprovalFormType,
   ApprovalRequest,
 } from '~/types/approval';
+import { ApproverInput } from './approver-input';
 
 // フォームのバリデーションスキーマ
 const formSchema = z.object({
@@ -195,7 +196,10 @@ export function ApprovalForm({
               <FormItem>
                 <FormLabel>承認者メールアドレス</FormLabel>
                 <FormControl>
-                  <Input placeholder="approver@example.com" {...field} />
+                  <ApproverInput
+                    placeholder="approver@example.com"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

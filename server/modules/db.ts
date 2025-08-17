@@ -326,3 +326,31 @@ export function withdrawApprovalRequest(id: string) {
 
   return `稟議申請ID: ${id} が正常に取り下げられました。`;
 }
+
+/**
+ * 自身の過去の申請情報を参照し、承認者一覧を取得
+ * @param limit 検索する過去申請件数の上限値
+ * @returns 承認者一覧
+ */
+export function getApprovers(limit = 100): string {
+  const userEmail = Session.getActiveUser().getEmail();
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DB_SHEET_NAME);
+  if (!sheet) {
+    throw new Error(`DBシート「${DB_SHEET_NAME}」が見つかりません`);
+  }
+  const values = sheet.getDataRange().getValues();
+  const latestRequests = values
+    .filter((row) => row[COLUMN_MAP.applicant - 1] === userEmail)
+    .sort((rowA, rowB) => {
+      return (
+        new Date(rowB[COLUMN_MAP.createdAt - 1]).getTime() -
+        new Date(rowA[COLUMN_MAP.createdAt - 1]).getTime()
+      );
+    })
+    .slice(0, limit);
+  const approvers = [
+    ...new Set(latestRequests.map((row) => row[COLUMN_MAP.approver - 1])),
+  ].sort();
+  return JSON.stringify(approvers);
+}
