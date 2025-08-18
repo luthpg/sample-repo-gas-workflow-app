@@ -590,11 +590,11 @@ export function ApprovalList() {
               {Math.min(currentPage * itemsPerPage, totalItems)}件を表示
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mr-auto">
                 <span className="text-sm">表示件数:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-20">
+                    <Button variant="outline" size="sm">
                       {itemsPerPage}
                     </Button>
                   </DropdownMenuTrigger>

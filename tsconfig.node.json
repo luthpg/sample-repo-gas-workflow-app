@@ -20,11 +20,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "composite": true,
-
-    "paths": {
-      "~/*": ["./*"]
-    }
+    "composite": true
   },
   "include": ["vite.config.ts"]
 }
