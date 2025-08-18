@@ -6,15 +6,11 @@ export type PostData = {
   name: 'postData';
 };
 
-export type WebAppParams<T extends string = string> = {
-  queryString: string;
+export interface WebAppParams<T extends string = string>
+  extends GoogleAppsScript.Events.DoGet {
   parameter: Record<T, string>;
   parameters: Record<T, string[]>;
-  contentLength: number;
-  pathInfo?: string;
-  contextPath: '';
-  postData?: PostData;
-};
+}
 
 export type ServerParams = WebAppParams & {
   siteTitle: string;
