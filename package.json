@@ -11,6 +11,8 @@
     "check": "biome check --write",
     "preview": "vite preview",
     "push": "clasp push -f",
+    "deploy": "clasp deploy",
+    "deploy:update": "dotenv cross-var \"clasp deploy --deploymentId $GAS_DEPLOYMENT_ID",
     "gas": "gasnuki",
     "test": "vitest run",
     "coverage": "vitest run --coverage"
@@ -55,6 +57,8 @@
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "3.2.4",
     "cpx": "^1.5.0",
+    "cross-var": "^1.1.0",
+    "dotenv-cli": "^10.0.0",
     "jsdom": "^26.1.0",
     "rimraf": "^6.0.1",
     "rolldown": "1.0.0-beta.32",
