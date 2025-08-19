@@ -13,9 +13,10 @@
     "push": "clasp push -f",
     "deploy": "clasp deploy",
     "deploy:update": "dotenv cross-var \"clasp deploy --deploymentId $GAS_DEPLOYMENT_ID",
-    "gas": "gasnuki",
+    "generate": "gasnuki",
     "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "pnpm run generate && pnpm run check && pnpm run test -- --silent"
   },
   "dependencies": {
     "@ciderjs/gasnuki": "^0.2.9",
