@@ -105,21 +105,16 @@ export function editApprovalRequest(id: string, formData: ApprovalForm) {
       throw new Error('この稟議は未承認状態ではないため、編集できません。');
     }
 
-    // 該当行のデータを更新
-    sheet.getRange(rowIndex + 1, COLUMN_MAP.title).setValue(formData.title);
+    const updatedValues = [...targetRow];
+    updatedValues[COLUMN_MAP.title - 1] = formData.title;
+    updatedValues[COLUMN_MAP.approver - 1] = formData.approver;
+    updatedValues[COLUMN_MAP.amount - 1] = formData.amount;
+    updatedValues[COLUMN_MAP.description - 1] = formData.description;
+    updatedValues[COLUMN_MAP.benefits - 1] = formData.benefits;
+    updatedValues[COLUMN_MAP.avoidableRisks - 1] = formData.avoidableRisks;
     sheet
-      .getRange(rowIndex + 1, COLUMN_MAP.approver)
-      .setValue(formData.approver);
-    sheet.getRange(rowIndex + 1, COLUMN_MAP.amount).setValue(formData.amount);
-    sheet
-      .getRange(rowIndex + 1, COLUMN_MAP.description)
-      .setValue(formData.description);
-    sheet
-      .getRange(rowIndex + 1, COLUMN_MAP.benefits)
-      .setValue(formData.benefits);
-    sheet
-      .getRange(rowIndex + 1, COLUMN_MAP.avoidableRisks)
-      .setValue(formData.avoidableRisks);
+      .getRange(rowIndex + 1, 1, 1, updatedValues.length)
+      .setValues([updatedValues]);
   });
 
   // 承認者に更新を通知
