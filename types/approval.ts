@@ -18,8 +18,7 @@ export type ApprovalRequest = {
 };
 
 /**
- * 稟議申請フォームのデータ型（zodスキーマ用）
- * 承認者メールアドレスを追加
+ * 稟議申請フォームのデータ型
  */
 export type ApprovalForm = {
   title: string;
