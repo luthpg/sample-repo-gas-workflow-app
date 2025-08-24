@@ -22,6 +22,7 @@ jobs:
 
       - name: Find files to push
         run: |
+          GIST_ID="b44be26669d7fe80628bb684be4cfae5"
           FILES=$(find . -type f $(echo "$IGNORE_PATTERNS" | xargs) )
           for FILE in $FILES; do
             echo "Updating $FILE"
