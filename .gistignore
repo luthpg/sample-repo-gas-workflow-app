@@ -1,0 +1,9 @@
+.gistignore
+.env
+.clasp.json
+.git/
+node_modules/
+*.log
+dist/
+coverage/
+.github/

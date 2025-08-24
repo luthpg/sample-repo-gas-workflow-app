@@ -1,0 +1,35 @@
+name: Push to Gist
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-gist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load .gistignore patterns
+        id: ignore
+        run: |
+          echo "::group::Loading .gistignore"
+          IGNORE_PATTERNS=$(cat .gistignore | grep -v '^#' | grep -v '^$' | sed 's|^|--exclude=|')
+          echo "IGNORE_PATTERNS=$IGNORE_PATTERNS" >> $GITHUB_ENV
+          echo "::endgroup::"
+
+      - name: Find files to push
+        run: |
+          FILES=$(find . -type f $(echo "$IGNORE_PATTERNS" | xargs) )
+          for FILE in $FILES; do
+            echo "Updating $FILE"
+            curl -s \
+              -X PATCH \
+              -H "Authorization: token ${{ secrets.GIST_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              "https://api.github.com/gists/$GIST_ID" \
+              -d "$(jq -n --arg name "$FILE" --arg content "$(cat "$FILE")" \
+                '{files: {($name): {content: $content}}}')"
+          done
