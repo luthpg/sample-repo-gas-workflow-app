@@ -135,7 +135,7 @@ export function editApprovalRequest(id: string, formData: ApprovalForm) {
 }
 
 /**
- * スプレッドシートから稟議申請を取得する（ページネーション対応）
+ * スプレッドシートから稟議申請を取得する
  * @param limit 取得件数
  * @param offset 開始位置
  * @returns 稟議申請の配列と総件数

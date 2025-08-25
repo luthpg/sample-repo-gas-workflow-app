@@ -11,8 +11,8 @@ export type ApprovalRequest = {
   description?: string; // 説明
   benefits?: string; // 導入によるメリット
   avoidableRisks?: string; // 懸念されるリスク
-  createdAt: string; // 申請日時 (ISO 8601形式)
-  approvedAt?: string; // 承認日時 (ISO 8601形式)
+  createdAt: string; // 申請日時
+  approvedAt?: string; // 承認日時
   rejectionReason?: string; // 却下理由
   approverComment?: string; // 承認者コメント
 };
