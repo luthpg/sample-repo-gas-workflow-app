@@ -69,5 +69,6 @@
     "vite-plugin-google-apps-script": "^0.4.0",
     "vite-plugin-singlefile": "^2.3.0",
     "vitest": "^3.2.4"
-  }
+  },
+  "packageManager": "pnpm@10.15.0"
 }
