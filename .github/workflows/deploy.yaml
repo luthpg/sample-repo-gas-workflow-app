@@ -22,7 +22,7 @@ jobs:
         with:
           name: ".clasprc.json"
           json: ${{ secrets.CLASPRC }}
-          dir: "."
+          dir: "~/"
       - run: |
           touch .clasp.json
           echo "{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"dist"}" > .clasp.json
