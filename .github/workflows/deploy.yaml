@@ -18,13 +18,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm prepublishOnly
       - run: pnpm build
-      - run: |
-          touch .clasprc.json
-          echo "${{ secrets.CLASPRC }}" > .clasprc.json
+      - uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: ".clasprc.json"
+          json: ${{ secrets.CLASPRC }}
+          dir: "."
       - run: |
           touch .clasp.json
           echo "{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"dist"}" > .clasp.json
-      - run: pnpm push -- -A ./.clasprc.json
-      - run: pnpm deploy:update -- --description "Deploy by GitHub Actions" -A ./.clasprc.json
+      - run: pnpm push -- -A .clasprc.json
+      - run: pnpm deploy:update -- --description "Deploy by GitHub Actions" -A .clasprc.json
         env:
           GAS_DEPLOYMENT_ID: ${{ secrets.GAS_DEPLOYMENT_ID }}
