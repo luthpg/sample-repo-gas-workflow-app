@@ -139,7 +139,7 @@ describe('Server DB Functions', () => {
       ],
       ['APR_003', 'Req 3', 'user@example.com', 'user@example.com', 'approved'],
     ];
-    const mockRange = { setValue: vi.fn() };
+    const mockRange = { setValues: vi.fn() };
 
     beforeEach(() => {
       mockSheet.getDataRange.mockReturnValue({
@@ -159,8 +159,23 @@ describe('Server DB Functions', () => {
       };
       const result = editApprovalRequest('APR_001', formData);
 
-      expect(mockSheet.getRange).toHaveBeenCalledWith(2, 2); // Title column
-      expect(mockRange.setValue).toHaveBeenCalledWith('New Title');
+      expect(mockSheet.getRange).toHaveBeenCalledWith(
+        2,
+        1,
+        1,
+        expect.any(Number),
+      );
+      expect(mockRange.setValues).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.arrayContaining([
+            'APR_001',
+            'New Title',
+            'user@example.com',
+            'new@example.com',
+            'pending',
+          ]),
+        ]),
+      );
       expect(mailer.sendApprovalNotification_).toHaveBeenCalledWith(
         'new@example.com',
         expect.stringContaining('【稟議更新】'),
