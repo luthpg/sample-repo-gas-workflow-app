@@ -52,11 +52,11 @@
       }
     },
     {
-      "includes": ["**/*.css"],
+      "includes": ["src/index.css"],
       "linter": {
         "rules": {
           "suspicious": {
-            "noUnknownAtRules": "info"
+            "noUnknownAtRules": "off"
           }
         }
       }

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build:front": "tsc -b && vite build",
-    "build:back": "rolldown -c && cpx server/appsscript.json dist/",
+    "build:back": "rolldown -c && cpy server/*.json dist",
     "build": "rimraf dist/ && pnpm run build:front && pnpm run build:back",
     "check": "biome check --write",
     "preview": "vite preview",
@@ -57,7 +57,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "3.2.4",
-    "cpx": "^1.5.0",
+    "cpy-cli": "^6.0.0",
     "cross-var": "^1.1.0",
     "dotenv-cli": "^10.0.0",
     "jsdom": "^26.1.0",
@@ -70,5 +70,6 @@
     "vite-plugin-google-apps-script": "^0.4.0",
     "vite-plugin-singlefile": "^2.3.0",
     "vitest": "^3.2.4"
-  }
+  },
+  "packageManager": "pnpm@10.15.0"
 }

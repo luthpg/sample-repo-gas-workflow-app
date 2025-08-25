@@ -1,4 +1,5 @@
 import { ChevronsUpDown } from 'lucide-react';
+import { ModeToggle } from '@/components/mode-toggle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ModeToggle } from './mode-toggle';
 
 export function UserAvatar({
   user,

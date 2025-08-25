@@ -1,11 +1,3 @@
-export type PostData = {
-  length: number;
-  /** mime type */
-  type: string;
-  contents: string;
-  name: 'postData';
-};
-
 export interface WebAppParams<T extends string = string>
   extends GoogleAppsScript.Events.DoGet {
   parameter: Record<T, string>;
