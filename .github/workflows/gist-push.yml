@@ -12,18 +12,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load .gistignore patterns
-        id: ignore
+      - name: Load files excluding .gistignore patterns
+        id: files
         run: |
-          echo "::group::Loading .gistignore"
-          IGNORE_PATTERNS=$(cat .gistignore | grep -v '^#' | grep -v '^$' | sed 's|^|--exclude=|')
-          echo "IGNORE_PATTERNS=$IGNORE_PATTERNS" >> $GITHUB_ENV
-          echo "::endgroup::"
+          find . -type f | sed 's|^\./||' > all_files.txt
+          grep -v '^#' .gistignore | grep -v '^$' > exclude_patterns.txt
+          grep -f exclude_patterns.txt all_files.txt > excluded.txt
+          comm -23 <(sort all_files.txt) <(sort excluded.txt) > filtered_files.txt
+          echo "FILES=$(paste -sd ' ' filtered_files.txt)" >> $GITHUB_ENV
 
       - name: Find files to push
         run: |
           GIST_ID="b44be26669d7fe80628bb684be4cfae5"
-          FILES=$(find . -type f $(echo "$IGNORE_PATTERNS" | xargs) )
           for FILE in $FILES; do
             echo "Updating $FILE"
             curl -s \
