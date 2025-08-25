@@ -20,17 +20,25 @@ jobs:
           grep -f exclude_patterns.txt all_files.txt > excluded.txt
           comm -23 <(sort all_files.txt) <(sort excluded.txt) > filtered_files.txt
           echo "FILES=$(paste -sd ' ' filtered_files.txt)" >> $GITHUB_ENV
+          rm all_files.txt exclude_patterns.txt excluded.txt filtered_files.txt
 
       - name: Find files to push
         run: |
           GIST_ID="b44be26669d7fe80628bb684be4cfae5"
           for FILE in $FILES; do
             echo "Updating $FILE"
-            curl -s \
+            RESPONSE=$(curl -s \
               -X PATCH \
               -H "Authorization: token ${{ secrets.GIST_TOKEN }}" \
               -H "Content-Type: application/json" \
               "https://api.github.com/gists/$GIST_ID" \
               -d "$(jq -n --arg name "$FILE" --arg content "$(cat "$FILE")" \
-                '{files: {($name): {content: $content}}}')"
+                '{files: {($name): {content: $content}}}')")
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+            MESSAGE=$(echo "$RESPONSE" | jq -r '.message // empty')
+            if [[ "$STATUS" == "422" ]]; then
+              echo "❌ Gist更新失敗: $MESSAGE"
+              echo "$RESPONSE" | jq
+              exit 1
+            fi
           done

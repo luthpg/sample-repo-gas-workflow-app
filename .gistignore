@@ -7,3 +7,4 @@ node_modules/
 dist/
 coverage/
 .github/
+README.md
