@@ -26,18 +26,10 @@ const mockApprovalRequests: ApprovalRequest[] = Array.from(
     description: `これはモック用の稟議申請 No.${i + 1} の説明文です。\nhttps://example.com/${i + 1}`,
     benefits: 'テスト効率化',
     avoidableRisks: '予期せぬバグ',
-    createdAt: Utilities.formatDate(
-      new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-      'JST',
-      'yyyy/MM/dd HH:mm:ss',
-    ),
+    createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
     approvedAt:
       i % 4 === 1
-        ? Utilities.formatDate(
-            new Date(Date.now() - (i - 1) * 24 * 60 * 60 * 1000),
-            'JST',
-            'yyyy/MM/dd HH:mm:ss',
-          )
+        ? new Date(Date.now() - (i - 1) * 24 * 60 * 60 * 1000).toISOString()
         : undefined,
     approverComment: i % 4 === 1 ? '承認します。' : undefined,
   }),
@@ -52,11 +44,7 @@ const mockup: PartialScriptType<ServerScripts> = {
       ...formData,
       applicant: parameters.userAddress,
       status: 'pending',
-      createdAt: Utilities.formatDate(
-        new Date(Date.now()),
-        'JST',
-        'yyyy/MM/dd HH:mm:ss',
-      ),
+      createdAt: new Date().toISOString(),
     };
     mockApprovalRequests.unshift(newRequest); // 先頭に追加
     return 'Mock: 稟議申請が正常に作成されました。';
@@ -78,11 +66,7 @@ const mockup: PartialScriptType<ServerScripts> = {
     const request = mockApprovalRequests.find((req) => req.id === id);
     if (request && request.approver === parameters.userAddress) {
       request.status = newStatus;
-      request.approvedAt = Utilities.formatDate(
-        new Date(),
-        'JST',
-        'yyyy/MM/dd HH:mm:ss',
-      );
+      request.approvedAt = new Date().toISOString();
       request.rejectionReason = reason;
       request.approverComment = approverComment;
       return `Mock: 稟議申請ID: ${id} のステータスが ${newStatus} に更新されました。`;
