@@ -4,7 +4,7 @@ export interface WebAppParams<T extends string = string>
   parameters: Record<T, string[]>;
 }
 
-export type ServerParams = WebAppParams & {
+export type ServerParams = WebAppParams<'id'> & {
   siteTitle: string;
   userAddress: string;
 };
